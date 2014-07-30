@@ -29,15 +29,10 @@ class Website
       ct = MIME::Types.of(f).first.to_s
       next unless ct =~ /^text|javascript$|xml$|x-font-truetype$/
 
-      Zlib::GzipWriter.open("#{f}.gz") do |gz|
-        gz.mtime = File.mtime(f)
-        gz.write IO.binread(f)
-      end
       size = File.size f
+      system "gzip --best --no-name #{f}"
       gzip_size = File.size "#{f}.gz"
       puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
-      FileUtils.rm f
-      FileUtils.mv "#{f}.gz", f
     end
   end
 

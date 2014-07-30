@@ -6,12 +6,10 @@ require 'pp'
 require './website'
 
 class MainController < Sinatra::Base
-  post '/:name' do |name|
+  post '/' do
     halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
-    #payload = JSON.parse request[:payload], symbolize_names: true
-
-    repo_url = "https://bitbucket.org/84codes/#{name}-website.git"
-
+    payload = JSON.parse request[:payload], symbolize_names: true
+    repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
     path = "/tmp/#{name}-#{rand}"
     begin
       FileUtils.mkdir_p path

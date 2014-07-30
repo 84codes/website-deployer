@@ -33,6 +33,7 @@ class Website
       system "gzip --best --no-name #{f}"
       gzip_size = File.size "#{f}.gz"
       puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
+      FileUtils.mv "#{f}.gz", f
     end
   end
 

@@ -8,10 +8,8 @@ require './website'
 class MainController < Sinatra::Base
   post '/:name' do |name|
     halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
-    pp params
-    #data = JSON.parse request.body.read, symbolize_names: true
+    #payload = JSON.parse request[:payload], symbolize_names: true
 
-    domain, repo_url = SITES[name]
     repo_url = "https://bitbucket.org/84codes/#{name}-website.git"
 
     path = "/tmp/#{name}-#{rand}"
@@ -19,6 +17,7 @@ class MainController < Sinatra::Base
       FileUtils.mkdir_p path
       Dir.chdir path do
         system "git clone --depth 1 #{repo_url} ."
+        domain = File.read('Domain').strip
         Website.new(domain).upload
       end
       204
@@ -26,11 +25,6 @@ class MainController < Sinatra::Base
       FileUtils.rm_rf path
     end
   end
-
-  SITES = {
-    '84codes' => 'www.84codes.com',
-    'cloudamqp' => 'www.cloudamqp.com',
-  }.freeze
 end
 
 run MainController

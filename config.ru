@@ -10,12 +10,12 @@ class MainController < Sinatra::Base
     halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
     payload = JSON.parse request[:payload], symbolize_names: true
     repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
+    domain = payload[:repository][:website].sub(/https?:\/\/([^\/]+).*/, '\1')
     path = "/tmp/#{name}-#{rand}"
     begin
       FileUtils.mkdir_p path
       Dir.chdir path do
         system "git clone --depth 1 #{repo_url} ."
-        domain = File.read('Domain').strip
         Website.new(domain).upload
       end
       204

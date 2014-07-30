@@ -94,15 +94,7 @@ class Website
           }
         })
         print "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        begin
-          sleep 2
-          invalid = cf.client.get_invalidation(
-            distribution_id: cf_distribution_id,
-            id: resp[:id]
-          )
-          print '.'
-        end while invalid[:status] == 'InProgress'
-        puts 'Done!'
+        #wait_for_invalidation(cf_distribution_id, resp[:id])
       else
         puts "Couldn't find a CloudFront distribution for #{@domain}"
       end
@@ -111,6 +103,18 @@ class Website
 
 
   private
+  def wait_for_invalidation(cf_distribution_id, invalidation_id)
+        begin
+          sleep 2
+          invalid = cf.client.get_invalidation(
+            distribution_id: cf_distribution_id,
+            id: invalidation_id
+          )
+          print '.'
+        end while invalid[:status] == 'InProgress'
+        puts 'Done!'
+  end
+
   HAML_OPTIONS = { format: :html5, ugly: true }.freeze
   def render_view(f, layouts)
     path = Dir.pwd.sub(/.*\/views/, '')

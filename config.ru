@@ -16,7 +16,7 @@ class MainController < Sinatra::Base
 
     path = "/tmp/#{name}-#{rand}"
     begin
-      FileUtils.mkdir_p pth
+      FileUtils.mkdir_p path
       Dir.chdir path do
         system "git clone --depth 1 #{repo_url} ."
         Website.new(domain).upload

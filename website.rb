@@ -74,12 +74,12 @@ class Website
       objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce)
     end
 
-    invalidate_cf(changes)
+    invalidate_cf(changed)
   end
 
 
   private
-  def invalidate_cf(changes)
+  def invalidate_cf(changed)
     if changed.length > 0
       cf = AWS::CloudFront.new
       dists = cf.client.list_distributions.items

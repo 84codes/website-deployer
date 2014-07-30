@@ -2,13 +2,13 @@ $stdout.sync = $stderr.sync = true
 require 'bundler/setup'
 require 'sinatra/base'
 require 'fileutils'
+require 'pp'
 require './website'
 
 class MainController < Sinatra::Base
   post '/:name' do |name|
-    puts request.body.read
-    request.body.rewind
     halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
+    pp params
     #data = JSON.parse request.body.read, symbolize_names: true
 
     domain, repo_url = SITES[name]

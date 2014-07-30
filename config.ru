@@ -10,6 +10,7 @@ class MainController < Sinatra::Base
     halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
     payload = JSON.parse request[:payload], symbolize_names: true
     repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
+    name = payload[:repository][:name]
     domain = payload[:repository][:website].sub(/https?:\/\/([^\/]+).*/, '\1')
     path = "/tmp/#{name}-#{rand}"
     begin

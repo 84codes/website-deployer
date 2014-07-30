@@ -74,6 +74,12 @@ class Website
       objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce)
     end
 
+    invalidate_cf(changes)
+  end
+
+
+  private
+  def invalidate_cf(changes)
     if changed.length > 0
       cf = AWS::CloudFront.new
       dists = cf.client.list_distributions.items
@@ -89,7 +95,7 @@ class Website
             caller_reference: SecureRandom.uuid,
           }
         })
-        print "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
+        puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
         #wait_for_invalidation(cf_distribution_id, resp[:id])
       else
         puts "Couldn't find a CloudFront distribution for #{@domain}"
@@ -97,18 +103,16 @@ class Website
     end
   end
 
-
-  private
   def wait_for_invalidation(cf_distribution_id, invalidation_id)
-        begin
-          sleep 2
-          invalid = cf.client.get_invalidation(
-            distribution_id: cf_distribution_id,
-            id: invalidation_id
-          )
-          print '.'
-        end while invalid[:status] == 'InProgress'
-        puts 'Done!'
+    begin
+      sleep 2
+      invalid = cf.client.get_invalidation(
+        distribution_id: cf_distribution_id,
+        id: invalidation_id
+      )
+      print '.'
+    end while invalid[:status] == 'InProgress'
+    puts 'Done!'
   end
 
   HAML_OPTIONS = { format: :html5, ugly: true }.freeze

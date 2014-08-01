@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+$stdout.sync = $stderr.sync = true
+require 'bundler/setup'
+require_relative '../website'
+
+domain = ARGV[0]
+puts "Deploying #{domain}"
+Website.new(domain).upload
+puts 'Done'
+

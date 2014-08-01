@@ -3,9 +3,9 @@ $stdout.sync = $stderr.sync = true
 require 'bundler/setup'
 require_relative '../website'
 
-domain = ARGV[0]
+name = ARGV[0]
 puts "Deploying #{name}"
-repo_url = "https://bitbucket.org/84codes/#{site}-website.git"
+repo_url = "https://bitbucket.org/84codes/#{name}-website.git"
 domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand}"
 begin

@@ -4,7 +4,18 @@ require 'bundler/setup'
 require_relative '../website'
 
 domain = ARGV[0]
-puts "Deploying #{domain}"
-Website.new(domain).upload
-puts 'Done'
+puts "Deploying #{name}"
+repo_url = "https://bitbucket.org/84codes/#{site}-website.git"
+domain = "www.#{name}.com"
+path = "/tmp/#{name}-#{rand}"
+begin
+  FileUtils.mkdir_p path
+  Dir.chdir path do
+    system "git clone --depth 1 #{repo_url} ."
+    Website.new(domain).upload
+  end
+  puts "#{domain} deployed"
+ensure
+  FileUtils.rm_rf path
+end
 

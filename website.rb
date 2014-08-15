@@ -172,7 +172,7 @@ class Website
     end
 
     def markdown(view_sym)
-      view = File.read("views/#{view_sym}.md")
+      view = File.read("#{Dir.pwd}/#{view_sym}.md")
       html = @markdown.render(view)
       html.gsub(/(\<code class=")/, '\1prettyprint ')
     end

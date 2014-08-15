@@ -3,7 +3,12 @@ $stdout.sync = $stderr.sync = true
 require 'bundler/setup'
 require_relative '../website'
 
-name = ARGV[0]
+name = ARGV.shift
+if name.nil?
+  puts "Usage: deploy {name}"
+  puts "Where name is cloudamqp or cloudmqtt etc."
+  exit 1
+end
 puts "Deploying #{name}"
 repo_url = "https://bitbucket.org/84codes/#{name}-website.git"
 domain = "www.#{name}.com"

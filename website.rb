@@ -44,6 +44,7 @@ class Website
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
 
+    cc = 'public, max-age=300, s-maxage=86400'
     changed = []
     objects.each do |obj|
       if f = files.find {|fn| fn == "output/#{obj.key}" }
@@ -53,7 +54,7 @@ class Website
           ct = "text/html;charset=utf-8" if ct == 'text/html'
           ce = 'gzip' if ct =~ /^text|javascript$|xml$|x-font-truetype$/
           puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-          objects[f.sub(/output\//,'')].write(:file => f, :content_type => ct, content_encoding: ce)
+          objects[f.sub(/output\//,'')].write(:file => f, :content_type => ct, content_encoding: ce, cache_control: cc)
           changed << "/#{obj.key}"
         else
           puts "Not changed: #{f}"
@@ -71,7 +72,7 @@ class Website
       ct += ";charset=utf-8" if ct == 'text/html'
       ce = 'gzip' if ct =~ /^text|javascript$|xml$/
       puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-      objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce, cache_control: 'public, max-age=300, s-maxage=86400')
+      objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce, cache_control: cc)
     end
 
     invalidate_cf(changed)

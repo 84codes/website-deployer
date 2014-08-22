@@ -71,7 +71,7 @@ class Website
       ct += ";charset=utf-8" if ct == 'text/html'
       ce = 'gzip' if ct =~ /^text|javascript$|xml$/
       puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-      objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce, cache_control: 'public, max-age=300')
+      objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce, cache_control: 'public, max-age=300, s-maxage=86400')
     end
 
     invalidate_cf(changed)

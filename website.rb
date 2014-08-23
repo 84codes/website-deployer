@@ -37,6 +37,7 @@ class Website
     end
   end
 
+  CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'
   def upload
     render
     gzip
@@ -44,7 +45,6 @@ class Website
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
 
-    cc = 'public, max-age=300, s-maxage=86400'
     changed = []
     objects.each do |obj|
       if f = files.find {|fn| fn == "output/#{obj.key}" }
@@ -54,7 +54,11 @@ class Website
           ct = "text/html;charset=utf-8" if ct == 'text/html'
           ce = 'gzip' if ct =~ /^text|javascript$|xml$|x-font-truetype$/
           puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-          objects[f.sub(/output\//,'')].write(:file => f, :content_type => ct, content_encoding: ce, cache_control: cc)
+          o = objects[f.sub(/output\//,'')]
+          o.write(file: f,
+                  content_type: ct,
+                  content_encoding: ce,
+                  cache_control: CACHE_CONTROL)
           changed << "/#{obj.key}"
         else
           puts "Not changed: #{f}"
@@ -72,12 +76,26 @@ class Website
       ct += ";charset=utf-8" if ct == 'text/html'
       ce = 'gzip' if ct =~ /^text|javascript$|xml$/
       puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-      objects[f.sub(/output\//,'')].write(file: f, content_type: ct, content_encoding: ce, cache_control: cc)
+      o = objects[f.sub(/output\//,'')]
+      o.write(file: f, content_type: ct, content_encoding: ce, cache_control: CACHE_CONTROL)
     end
 
     invalidate_cf(changed)
   end
 
+  def update_headers
+    s3 = AWS::S3.new
+    s3.buckets[@domain].objects.each do |o|
+      h = o.head
+      opts = {
+        content_type: h[:content_type],
+        content_encoding: h[:content_encoding],
+        cache_control: CACHE_CONTROL,
+      }
+      puts "#{o.key} #{opts}"
+      o.copy_to(o.key, opts)
+    end
+  end
 
   private
   def invalidate_cf(changed)

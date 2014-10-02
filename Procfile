@@ -1,1 +1,1 @@
-web: puma -p $PORT -e production
+web: puma -p $PORT -e production -t 1:1

@@ -3,6 +3,7 @@ require 'bundler/setup'
 require 'sinatra/base'
 require 'fileutils'
 require 'tmpdir'
+require 'mail'
 require './website'
 
 class MainController < Sinatra::Base
@@ -15,12 +16,40 @@ class MainController < Sinatra::Base
     end
     repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
     domain = payload[:repository][:website].sub(/https?:\/\/([^\/]+).*/, '\1')
+    log = []
     Dir.mktmpdir do |path|
       Dir.chdir path do
-        system "git clone --depth 1 #{repo_url} ."
-        Website.new(domain).upload
+        begin
+          system "git clone --depth 1 #{repo_url} ."
+          Website.new(domain, proc { |s| puts s; logs << s }).upload
+        rescue
+          log << "Exception: #{$!.inspect}"
+          log.concat $!.backtrace
+          raise
+        end
       end
-      puts "#{domain} deployed"
+    end
+
+    emails = payload[:commits].map { |c| c[:raw_author] }
+    Mail.deliver do
+      from 'system@84codes.com'
+      to emails
+      subject "#{domain} deploy log"
+      body logs.join("\n")
+    end
+  end
+
+  configure do
+    Mail.defaults do
+      delivery_method :smtp, {
+        :address              => "email-smtp.us-east-1.amazonaws.com",
+        :port                 => 587,
+        :domain               => "cloudamqp.com",
+        :user_name            => ENV.fetch('SES_ACCESS_KEY'),
+        :password             => ENV.fetch('SES_SECRET_KEY'),
+        :authentication       => 'plain',
+        :enable_starttls_auto => true
+      }
     end
   end
 end

@@ -6,6 +6,7 @@ gem 'aws-sdk'
 gem 'mime-types'
 gem 'sinatra'
 gem 'puma'
+gem 'mail'
 
 # Normal requirements for websites
 gem 'haml'

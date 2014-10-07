@@ -21,11 +21,10 @@ class MainController < Sinatra::Base
       Dir.chdir path do
         begin
           system "git clone --depth 1 #{repo_url} ."
-          Website.new(domain, proc { |s| puts s; logs << s }).upload
+          Website.new(domain, proc { |s| puts s; log << s }).upload
         rescue
           log << "Exception: #{$!.inspect}"
           log.concat $!.backtrace
-          raise
         end
       end
     end
@@ -35,7 +34,7 @@ class MainController < Sinatra::Base
       from 'system@84codes.com'
       to emails
       subject "#{domain} deploy log"
-      body logs.join("\n")
+      body log.join("\n")
     end
   end
 

@@ -1,33 +1,44 @@
 require 'fileutils'
 require 'securerandom'
-require 'haml'
-require 'redcarpet'
 require 'aws'
 require 'mime/types'
 
 class Website
-  def initialize(domain)
+  def initialize(domain, &blk)
     @domain = domain
+    @puts = if block_given?
+              blk
+            else
+              proc { |s| $stdout.puts(s) }
+            end
   end
 
-  def clean
-    FileUtils.rm_rf 'output'
-    FileUtils.mkdir_p 'output'
+  def puts(*args)
+    args.each { |a| @puts.call a }
   end
 
   def render
-    clean
-    FileUtils.cp_r 'public/.', 'output', preserve: true
-    Dir.chdir 'views' do
-      render_dir
-    end
+    port = rand(1025..9999)
+    FileUtils.rm_rf 'output'
+    FileUtils.rm_rf "localhost:#{port}"
+
+    system "bundle --deploy --retry 3 --jobs 4"
+    pid = spawn("RACK_ENV=production ruby app.rb -p port")
+    system "wget --mirror localhost:#{port}"
+    Process.kill 'INT', pid
+    Process.wait pid
+
+    FileUtils.mv "localhost:#{port}", "output"
+  end
+
+  def compressable?(f)
+    MIME::Types.of(f).first.to_s =~ /^text|javascript$|xml$|x-font-truetype$/
   end
 
   def gzip
     files = Dir['output/**/*'].select{ |f| File.file? f }
     files.each do |f|
-      ct = MIME::Types.of(f).first.to_s
-      next unless ct =~ /^text|javascript$|xml$|x-font-truetype$/
+      next unless compressable? f
 
       size = File.size f
       system "gzip --best --no-name #{f}"
@@ -52,7 +63,7 @@ class Website
         if not obj.etag[1..-2] == md5
           ct = MIME::Types.of(f).first.to_s
           ct = "text/html;charset=utf-8" if ct == 'text/html'
-          ce = 'gzip' if ct =~ /^text|javascript$|xml$|x-font-truetype$/
+          ce = 'gzip' if compressable? f
           puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
           o = objects[f.sub(/output\//,'')]
           o.write(file: f,
@@ -115,7 +126,7 @@ class Website
           }
         })
         puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        #wait_for_invalidation(cf_distribution_id, resp[:id])
+        wait_for_invalidation(cf_distribution_id, resp[:id]) if false
       else
         puts "Couldn't find a CloudFront distribution for #{@domain}"
       end
@@ -132,69 +143,6 @@ class Website
       print '.'
     end while invalid[:status] == 'InProgress'
     puts 'Done!'
-  end
-
-  HAML_OPTIONS = { format: :html5, ugly: true }.freeze
-  def render_view(f, layouts)
-    path = Dir.pwd.sub(/.*\/views/, '')
-    name = File.basename f, '.haml'
-    name = File.join(path, name)[1..-1]
-    haml_view = File.read(f)
-    view = Haml::Engine.new(haml_view, HAML_OPTIONS)
-    ctx = HamlViewContext.new(HAML_OPTIONS)
-    html = view.to_html(ctx, { name: name })
-    layouts.reverse.each do |layout|
-      html = layout.to_html(ctx, { name: name }) { html }
-    end
-
-    outf = File.join Dir.pwd.sub('views', 'output'), f.sub('haml', 'html')
-    File.open(outf, 'w+') {|o| o.write html}
-    File.utime(File.atime(outf), File.mtime(f), outf)
-  end
-
-  def render_dir(layouts = [])
-    if File.exist? 'layout.haml'
-      haml_layout = File.read('layout.haml')
-      layout = Haml::Engine.new(haml_layout, HAML_OPTIONS)
-      layouts << layout
-    end
-    FileUtils.mkdir_p Dir.pwd.sub('/views', '/output')
-    Dir.foreach '.' do |f|
-      next if f == '.' || f == '..'
-      Dir.chdir f do
-        render_dir layouts.dup
-      end if File.directory? f
-    end
-    Dir.glob('*.haml') do |f|
-      next if f == 'layout.haml'
-      render_view(f, layouts)
-    end
-  end
-
-  class HamlViewContext
-    def initialize(opts)
-      @opts = opts
-      rnder = Redcarpet::Render::HTML.new(prettify: true)
-      @markdown = Redcarpet::Markdown.new(rnder, {
-        :autolink => true,
-        :space_after_headers => true,
-        :no_intra_emphasis => true,
-        :fenced_code_blocks => true,
-        :space_after_headers => true
-      })
-    end
-
-    def haml(view_sym, opts)
-      haml_view = File.read("#{Dir.pwd}/#{view_sym}.haml")
-      engine = Haml::Engine.new(haml_view, @opts.merge(opts))
-      engine.to_html(self.class.new(@opts), opts[:locals])
-    end
-
-    def markdown(view_sym)
-      view = File.read("#{Dir.pwd}/#{view_sym}.md")
-      html = @markdown.render(view)
-      html.gsub(/(\<code class=")/, '\1prettyprint ')
-    end
   end
 end
 

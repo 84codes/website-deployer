@@ -4,13 +4,9 @@ require 'aws'
 require 'mime/types'
 
 class Website
-  def initialize(domain, &blk)
+  def initialize(domain, blk = proc { |s| $stdout.puts(s) })
     @domain = domain
-    @puts = if block_given?
-              blk
-            else
-              proc { |s| $stdout.puts(s) }
-            end
+    @puts = blk
   end
 
   def puts(*args)

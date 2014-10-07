@@ -22,11 +22,10 @@ class Website
     FileUtils.rm_rf 'output'
     FileUtils.rm_rf "localhost:#{port}"
 
-    system "bundle --deploy --retry 3 --jobs 4"
-    pid = spawn("RACK_ENV=production ruby app.rb -p port")
+    system "bundle --deployment --retry 3 --jobs 4"
+    pid = spawn("RACK_ENV=production ruby app.rb -p #{port}")
     system "wget --mirror localhost:#{port}"
     Process.kill 'INT', pid
-    Process.wait pid
 
     FileUtils.mv "localhost:#{port}", "output"
   end

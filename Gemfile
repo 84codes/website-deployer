@@ -1,9 +1,7 @@
 source 'https://rubygems.org'
 
-ruby '2.1.2'
+ruby '2.1.3'
 
-gem 'haml'
-gem 'redcarpet'
 gem 'aws-sdk'
 gem 'mime-types'
 gem 'sinatra'

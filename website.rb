@@ -16,7 +16,7 @@ class Website
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
     sleep 1 # wait for app to start
-    system "wget --mirror localhost:#{port}"
+    system "wget --mirror --no-verbose localhost:#{port}"
     Process.kill 'INT', pid
 
     FileUtils.mv "localhost:#{port}", "output"

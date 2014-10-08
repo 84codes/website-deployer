@@ -29,7 +29,7 @@ class MainController < Sinatra::Base
       end
     end
 
-    emails = payload[:commits].map { |c| c[:raw_author] }
+    emails = payload[:commits].map { |c| c[:raw_author] }.uniq
     Mail.deliver do
       from 'system@84codes.com'
       to emails

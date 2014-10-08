@@ -92,9 +92,9 @@ class Website
         o = objects[f]
         o.write(file: f, content_type: ct, content_encoding: ce, cache_control: CACHE_CONTROL)
       end
-    end
 
-    invalidate_cf(changed)
+      invalidate_cf(changed)
+    end
   end
 
   def update_headers

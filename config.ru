@@ -49,7 +49,8 @@ class MainController < Sinatra::Base
       $stdout.reopen t
       $stderr.reopen t
       yield
-      t.rewind
+      $stdout.rewind
+      $stderr.rewind
       return t.read
     ensure
       $stdout.reopen org_stdout

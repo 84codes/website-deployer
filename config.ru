@@ -5,6 +5,7 @@ require 'fileutils'
 require 'tmpdir'
 require 'mail'
 require './website'
+require 'tempfile'
 
 class MainController < Sinatra::Base
   post '/' do
@@ -16,15 +17,17 @@ class MainController < Sinatra::Base
     end
     repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
     domain = payload[:repository][:website].sub(/https?:\/\/([^\/]+).*/, '\1')
-    log = []
-    Dir.mktmpdir do |path|
-      Dir.chdir path do
-        begin
-          system "git clone --depth 1 #{repo_url} ."
-          Website.new(domain, proc { |s| puts s; log << s }).upload
-        rescue
-          log << "Exception: #{$!.inspect}"
-          log.concat $!.backtrace
+
+    log = capture_output do
+      Dir.mktmpdir do |path|
+        Dir.chdir path do
+          begin
+            system "git clone --depth 1 #{repo_url} ."
+            Website.new(domain).upload
+          rescue
+            puts "[ERROR] #{$!.inspect}"
+            puts $!.backtrace.join("\n  ")
+          end
         end
       end
     end
@@ -34,7 +37,24 @@ class MainController < Sinatra::Base
       from 'system@84codes.com'
       to emails
       subject "#{domain} deploy log"
-      body log.join("\n")
+      body log
+    end
+  end
+
+  helpers do
+    def capture_output
+      org_stdout = $stdout.dup
+      org_stderr = $stderr.dup
+      t = Tempfile.new 'out'
+      $stdout.reopen t
+      $stderr.reopen t
+      yield
+      t.rewind
+      return t.read
+    ensure
+      $stdout.reopen org_stdout
+      $stderr.reopen org_stderr
+      t.unlink
     end
   end
 

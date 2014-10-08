@@ -27,11 +27,11 @@ class Website
   end
 
   def compressable?(f)
-    content_type =~ /^text|javascript$|xml$|x-font-truetype$/
+    content_type(f) =~ /^text|javascript$|xml$|x-font-truetype$/
   end
 
   def html?(f)
-    content_type == 'text/html'
+    content_type(f) == 'text/html'
   end
 
   def gzip

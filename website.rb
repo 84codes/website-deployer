@@ -22,20 +22,30 @@ class Website
     FileUtils.mv "localhost:#{port}", "output"
   end
 
+  def content_type(f)
+    MIME::Types.of(f).first.to_s
+  end
+
   def compressable?(f)
-    MIME::Types.of(f).first.to_s =~ /^text|javascript$|xml$|x-font-truetype$/
+    content_type =~ /^text|javascript$|xml$|x-font-truetype$/
+  end
+
+  def html?(f)
+    content_type == 'text/html'
   end
 
   def gzip
-    files = Dir['output/**/*'].select{ |f| File.file? f }
-    files.each do |f|
-      next unless compressable? f
+    Dir.chdir 'output' do
+      files = Dir['**/*'].select{ |f| File.file? f }
+      files.each do |f|
+        next unless compressable? f
 
-      size = File.size f
-      system "gzip --best --no-name #{f}"
-      gzip_size = File.size "#{f}.gz"
-      puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
-      FileUtils.mv "#{f}.gz", f
+        size = File.size f
+        system "gzip --best --no-name #{f}"
+        gzip_size = File.size "#{f}.gz"
+        puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
+        FileUtils.mv "#{f}.gz", f
+      end
     end
   end
 
@@ -43,43 +53,45 @@ class Website
   def upload
     render
     gzip
-    files = Dir['output/**/*'].select{ |f| File.file? f }
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
+    Dir.chdir 'output' do
+      files = Dir['**/*'].select{ |f| File.file? f }
 
-    changed = []
-    objects.each do |obj|
-      if f = files.find {|fn| fn == "output/#{obj.key}" }
-        md5 = Digest::MD5.file(f).to_s
-        if not obj.etag[1..-2] == md5
-          ct = MIME::Types.of(f).first.to_s
-          ct = "text/html;charset=utf-8" if ct == 'text/html'
-          ce = 'gzip' if compressable? f
-          puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-          o = objects[f.sub(/output\//,'')]
-          o.write(file: f,
-                  content_type: ct,
-                  content_encoding: ce,
-                  cache_control: CACHE_CONTROL)
-          changed << "/#{obj.key}"
+      changed = []
+      objects.each do |obj|
+        if f = files.find {|fn| fn == obj.key }
+          md5 = Digest::MD5.file(f).to_s
+          if not obj.etag[1..-2] == md5
+            ct = content_type f
+            ct += ";charset=utf-8" if ct == 'text/html'
+            ce = 'gzip' if compressable? f
+            puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
+            o = objects[f]
+            o.write(file: f,
+                    content_type: ct,
+                    content_encoding: ce,
+                    cache_control: CACHE_CONTROL)
+            changed << "/#{obj.key}"
+          else
+            puts "Not changed: #{f}"
+          end
+          files.delete f
         else
-          puts "Not changed: #{f}"
+          puts "Deleting: #{obj.key}"
+          obj.delete
+          changed << "/#{obj.key}"
         end
-        files.delete f
-      else
-        puts "Deleting: #{obj.key}"
-        obj.delete
-        changed << "/#{obj.key}"
       end
-    end
 
-    files.each do |f|
-      ct = MIME::Types.of(f).first.to_s
-      ct += ";charset=utf-8" if ct == 'text/html'
-      ce = 'gzip' if ct =~ /^text|javascript$|xml$/
-      puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-      o = objects[f.sub(/output\//,'')]
-      o.write(file: f, content_type: ct, content_encoding: ce, cache_control: CACHE_CONTROL)
+      files.each do |f|
+        ct = content_type f
+        ct += ";charset=utf-8" if ct == 'text/html'
+        ce = 'gzip' if compressable? f
+        puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
+        o = objects[f]
+        o.write(file: f, content_type: ct, content_encoding: ce, cache_control: CACHE_CONTROL)
+      end
     end
 
     invalidate_cf(changed)

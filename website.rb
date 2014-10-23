@@ -39,7 +39,7 @@ class Website
         next unless compressable? f
 
         size = File.size f
-        system "gzip --keep --best --no-name #{f}"
+        system "gzip --stdout --best --no-name #{f} > #{f}.gz"
         gzip_size = File.size "#{f}.gz"
         puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
       end

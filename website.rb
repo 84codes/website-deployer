@@ -23,15 +23,13 @@ class Website
   end
 
   def content_type(f)
-    MIME::Types.of(f).first.to_s
+    ct = MIME::Types.of(f).first.to_s
+    ct += ';charset=utf-8' if ct == 'text/html'
+    ct
   end
 
   def compressable?(f)
     content_type(f) =~ /^text|javascript$|xml$|x-font-truetype$/
-  end
-
-  def html?(f)
-    content_type(f) == 'text/html'
   end
 
   def gzip
@@ -41,10 +39,9 @@ class Website
         next unless compressable? f
 
         size = File.size f
-        system "gzip --best --no-name #{f}"
+        system "gzip --keep --best --no-name #{f}"
         gzip_size = File.size "#{f}.gz"
         puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
-        FileUtils.mv "#{f}.gz", f
       end
     end
   end
@@ -63,9 +60,13 @@ class Website
         if f = files.find {|fn| fn == obj.key }
           md5 = Digest::MD5.file(f).to_s
           if not obj.etag[1..-2] == md5
-            ct = content_type f
-            ct += ";charset=utf-8" if ct == 'text/html'
-            ce = 'gzip' if compressable? f
+            if f.sub!(/\.gz$/, '')
+              ct = content_type f
+              ce = 'gzip'
+              f += '.gz'
+            else
+              ct = content_type f
+            end
             puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
             o = objects[f]
             o.write(file: f,
@@ -85,12 +86,20 @@ class Website
       end
 
       files.each do |f|
-        ct = content_type f
-        ct += ";charset=utf-8" if ct == 'text/html'
-        ce = 'gzip' if compressable? f
+        if f.sub!(/\.gz$/, '')
+          ct = content_type f
+          ce = 'gzip'
+          f += '.gz'
+        else
+          ct = content_type f
+        end
         puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-        o = objects[f]
-        o.write(file: f, content_type: ct, content_encoding: ce, cache_control: CACHE_CONTROL)
+        objects[f].write({
+          file: f,
+          content_type: ct,
+          content_encoding: ce,
+          cache_control: CACHE_CONTROL
+        })
       end
 
       invalidate_cf(changed)

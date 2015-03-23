@@ -10,7 +10,7 @@ if name.nil?
   exit 1
 end
 puts "Deploying #{name}"
-repo_url = "https://bitbucket.org/84codes/#{name}-website.git"
+repo_url = "https://github.com/84codes/#{name}-website.git"
 domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand}"
 begin

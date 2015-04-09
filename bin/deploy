@@ -10,7 +10,8 @@ if name.nil?
   exit 1
 end
 puts "Deploying #{name}"
-repo_url = "https://github.com/84codes/#{name}-website.git"
+auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
+repo_url = "https://#{auth}@github.com/84codes/#{name}-website.git"
 domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand}"
 begin
@@ -23,4 +24,3 @@ begin
 ensure
   FileUtils.rm_rf path
 end
-

@@ -12,8 +12,7 @@ require 'uri'
 class MainController < Sinatra::Base
   post '/' do
     content_type 'text/plain'
-    p request.env
-    p data = request.body.read
+    data = request.body.read
     digest = OpenSSL::Digest.new('sha1')
     key = ENV.fetch 'GITHUB_SECRET'
     hmac = OpenSSL::HMAC.hexdigest(digest, key, data)
@@ -48,6 +47,7 @@ class MainController < Sinatra::Base
       subject "#{domain} deploy log"
       body log
     end
+    200
   end
 
   helpers do

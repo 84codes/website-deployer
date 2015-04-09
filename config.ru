@@ -12,11 +12,12 @@ require 'uri'
 class MainController < Sinatra::Base
   post '/' do
     content_type 'text/plain'
+    p request.env
     p data = request.body.read
     digest = OpenSSL::Digest.new('sha1')
     key = ENV.fetch 'GITHUB_SECRET'
     hmac = OpenSSL::HMAC.hexdigest(digest, key, data)
-    halt 401 unless request.headers['X-Hub-Signature'] == hmac
+    halt 401 unless request.env['X-Hub-Signature'] == hmac
     payload = JSON.parse data, symbolize_names: true
     unless payload[:ref] == "refs/heads/master"
       halt 200, 'No master branch commit, passing'

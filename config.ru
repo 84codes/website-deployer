@@ -6,27 +6,34 @@ require 'tmpdir'
 require 'mail'
 require './website'
 require 'tempfile'
+require 'openssl'
+require 'uri'
 
 class MainController < Sinatra::Base
   post '/' do
     content_type 'text/plain'
-    halt 401 unless params[:API_KEY] == ENV.fetch('API_KEY')
-    payload = JSON.parse request[:payload], symbolize_names: true
-    unless payload[:commits].any? { |c| c[:branch] == 'master' }
+    p data = request.body.read
+    digest = OpenSSL::Digest.new('sha1')
+    key = ENV.fetch 'GITHUB_SECRET'
+    hmac = OpenSSL::HMAC.hexdigest(digest, key, data)
+    halt 401 unless request.headers['X-Hub-Signature'] == hmac
+    payload = JSON.parse data, symbolize_names: true
+    unless payload[:ref] == "refs/heads/master"
       halt 200, 'No master branch commit, passing'
     end
-    repo_url = "#{payload[:canon_url]}#{payload[:repository][:absolute_url]}.git"
-    domain = payload[:repository][:website].sub(/https?:\/\/([^\/]+).*/, '\1')
+    clone_url = URI.parse payload[:repository][:clone_url]
+    clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
+    domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
 
     log = capture_output do
       Dir.mktmpdir do |path|
         Dir.chdir path do
           begin
-            system "git clone --depth 1 #{repo_url} ."
+            system "git clone --depth 1 #{clone_url} ."
             Website.new(domain).upload
-          rescue
-            puts "[ERROR] #{$!.inspect}"
-            puts $!.backtrace.join("\n  ")
+          rescue => e
+            puts "[ERROR] #{e.inspect}"
+            puts e.backtrace.join("\n  ")
           end
         end
       end
@@ -62,17 +69,15 @@ class MainController < Sinatra::Base
   configure do
     Mail.defaults do
       delivery_method :smtp, {
-        :address              => "email-smtp.us-east-1.amazonaws.com",
-        :port                 => 587,
-        :domain               => "cloudamqp.com",
-        :user_name            => ENV.fetch('SES_ACCESS_KEY'),
-        :password             => ENV.fetch('SES_SECRET_KEY'),
-        :authentication       => 'plain',
-        :enable_starttls_auto => true
+        address: "email-smtp.us-east-1.amazonaws.com",
+        port: 465,
+        domain: "cloudamqp.com",
+        user_name: ENV.fetch('SES_ACCESS_KEY'),
+        password: ENV.fetch('SES_SECRET_KEY'),
+        tls: true
       }
     end
   end
 end
 
 run MainController
-

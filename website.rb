@@ -34,13 +34,13 @@ class Website
 
   def gzip
     Dir.chdir 'output' do
-      files = Dir['**/*'].select{ |f| File.file? f }
+      files = Dir['**/*'].select { |f| File.file? f }
       files.each do |f|
         next unless compressable? f
 
         size = File.size f
-        system "gzip --stdout --best --no-name #{f} > #{f}.gz"
-        gzip_size = File.size "#{f}.gz"
+        system "gzip --best --no-name #{f} && mv #{f}.gz #{f}"
+        gzip_size = File.size f
         puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
       end
     end
@@ -59,14 +59,9 @@ class Website
       objects.each do |obj|
         if f = files.find {|fn| fn == obj.key }
           md5 = Digest::MD5.file(f).to_s
-          if not obj.etag[1..-2] == md5
-            if f.sub!(/\.gz$/, '')
-              ct = content_type f
-              ce = 'gzip'
-              f += '.gz'
-            else
-              ct = content_type f
-            end
+          if obj.etag[1..-2] != md5
+            ct = content_type f
+            ce = 'gzip' if compressable? f
             puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
             o = objects[f]
             o.write(file: f,
@@ -86,13 +81,8 @@ class Website
       end
 
       files.each do |f|
-        if f.sub!(/\.gz$/, '')
-          ct = content_type f
-          ce = 'gzip'
-          f += '.gz'
-        else
-          ct = content_type f
-        end
+        ct = content_type f
+        ce = 'gzip' if compressable? f
         puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
         objects[f].write({
           file: f,

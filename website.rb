@@ -28,46 +28,25 @@ class Website
     ct
   end
 
-  def compressable?(f)
-    content_type(f) =~ /^text|javascript$|xml$|x-font-truetype$/
-  end
-
-  def gzip
-    Dir.chdir 'output' do
-      files = Dir['**/*'].select { |f| File.file? f }
-      files.each do |f|
-        next unless compressable? f
-
-        size = File.size f
-        system "gzip --best --no-name #{f} && mv #{f}.gz #{f}"
-        gzip_size = File.size f
-        puts "Compressing: #{f} saving #{(size - gzip_size)/1024} KB"
-      end
-    end
-  end
-
   CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'
+
   def upload
     render
-    gzip
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
     Dir.chdir 'output' do
-      files = Dir['**/*'].select{ |f| File.file? f }
+      files = Dir['**/*'].select { |f| File.file? f }
 
       changed = []
       objects.each do |obj|
-        if f = files.find {|fn| fn == obj.key }
+        if f = files.find { |fn| fn == obj.key }
           md5 = Digest::MD5.file(f).to_s
           if obj.etag[1..-2] != md5
             ct = content_type f
-            ce = 'gzip' if compressable? f
-            puts "Updating: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-            o = objects[f]
-            o.write(file: f,
-                    content_type: ct,
-                    content_encoding: ce,
-                    cache_control: CACHE_CONTROL)
+            puts "Updating: #{f} Content-type: #{ct}"
+            objects[f].write(file: f,
+                             content_type: ct,
+                             cache_control: CACHE_CONTROL)
             changed << "/#{obj.key}"
           else
             puts "Not changed: #{f}"
@@ -82,69 +61,51 @@ class Website
 
       files.each do |f|
         ct = content_type f
-        ce = 'gzip' if compressable? f
-        puts "Uploading: #{f} Content-type: #{ct} Content-encoding: #{ce}"
-        objects[f].write({
-          file: f,
-          content_type: ct,
-          content_encoding: ce,
-          cache_control: CACHE_CONTROL
-        })
+        puts "Uploading: #{f} Content-type: #{ct}"
+        objects[f].write(file: f,
+                         content_type: ct,
+                         cache_control: CACHE_CONTROL)
       end
 
       invalidate_cf(changed)
     end
   end
 
-  def update_headers
-    s3 = AWS::S3.new
-    s3.buckets[@domain].objects.each do |o|
-      h = o.head
-      opts = {
-        content_type: h[:content_type],
-        content_encoding: h[:content_encoding],
-        cache_control: CACHE_CONTROL,
-      }
-      puts "#{o.key} #{opts}"
-      o.copy_to(o.key, opts)
-    end
-  end
-
   private
+
   def invalidate_cf(changed)
-    if changed.length > 0
-      cf = AWS::CloudFront.new
-      dists = cf.client.list_distributions.items
-      dist = dists.find { |d| d[:aliases][:items].include? @domain }
-      if dist and cf_distribution_id = dist[:id]
-        resp = cf.client.create_invalidation({
-          distribution_id: cf_distribution_id,
-          invalidation_batch: {
-            paths: {
-              items: changed,
-              quantity: changed.length,
-            },
-            caller_reference: SecureRandom.uuid,
-          }
-        })
-        puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        wait_for_invalidation(cf_distribution_id, resp[:id]) if false
-      else
-        puts "Couldn't find a CloudFront distribution for #{@domain}"
-      end
+    return if changed.length == 0
+    cf = AWS::CloudFront.new
+    dists = cf.client.list_distributions.items
+    dist = dists.find { |d| d[:aliases][:items].include? @domain }
+    if dist and cf_distribution_id = dist[:id]
+      resp = cf.client.create_invalidation(
+        distribution_id: cf_distribution_id,
+        invalidation_batch: {
+          paths: {
+            items: changed,
+            quantity: changed.length,
+          },
+          caller_reference: SecureRandom.uuid,
+        }
+      )
+      puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
+      # wait_for_invalidation(cf_distribution_id, resp[:id])
+    else
+      puts "Couldn't find a CloudFront distribution for #{@domain}"
     end
   end
 
   def wait_for_invalidation(cf_distribution_id, invalidation_id)
-    begin
+    loop do
       sleep 2
       invalid = cf.client.get_invalidation(
         distribution_id: cf_distribution_id,
         id: invalidation_id
       )
+      break unless invalid[:status] == 'InProgress'
       print '.'
-    end while invalid[:status] == 'InProgress'
+    end
     puts 'Done!'
   end
 end
-

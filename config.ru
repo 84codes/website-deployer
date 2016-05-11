@@ -8,6 +8,7 @@ require './website'
 require 'tempfile'
 require 'openssl'
 require 'uri'
+require 'json'
 
 class MainController < Sinatra::Base
   post '/' do

@@ -20,7 +20,7 @@ class Website
     Process.kill 'INT', pid
 
     FileUtils.mv "localhost:#{port}", "output"
-    Dir['**/*'].select { |f| f.contains? "?" }.each { |f| FileUtils.rm f }
+    Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
   end
 
   def content_type(f)

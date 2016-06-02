@@ -16,7 +16,14 @@ class Website
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
     sleep 1 # wait for app to start
-    system "wget --mirror --no-verbose localhost:#{port}"
+
+    files = ["index.html", "404.html"]
+    files.concat(File.readlines "Extrafiles") if File.exists? "Extrafiles"
+
+    files.map! { |f| "http://localhost:#{port}/#{f.sub(%r(^/), '')}" }
+    File.write "Files", files.join("\n")
+
+    system "wget --mirror --no-verbose --input-file Files"
     Process.kill 'INT', pid
 
     FileUtils.mv "localhost:#{port}", "output"

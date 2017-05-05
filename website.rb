@@ -18,9 +18,9 @@ class Website
     sleep 1 # wait for app to start
 
     files = ["index.html", "404.html"]
-    files.concat(File.readlines "Extrafiles") if File.exists? "Extrafiles"
+    files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
 
-    files.map! { |f| "http://localhost:#{port}/#{f.sub(%r(^/), '')}" }
+    files.map! { |f| "http://localhost:#{port}/#{f.sub(%r{^/}, '')}" }
     File.write "Files", files.join("\n")
 
     system "wget --mirror --no-verbose --input-file Files"
@@ -28,6 +28,10 @@ class Website
 
     FileUtils.mv "localhost:#{port}", "output"
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
+  rescue Errno::ENOENT => e
+    puts e.message
+    puts Dir.entries(".")
+    raise
   end
 
   def content_type(f)
@@ -36,7 +40,7 @@ class Website
     ct
   end
 
-  CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'
+  CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'.freeze
 
   def upload
     render
@@ -82,12 +86,12 @@ class Website
   private
 
   def invalidate_cf(changed)
-    return if changed.length == 0
+    return if changed.length.zero?
     cf = AWS::CloudFront.new
     dists = cf.client.list_distributions.items
     dist = dists.find { |d| d[:aliases][:items].include? @domain }
     if dist and cf_distribution_id = dist[:id]
-      resp = cf.client.create_invalidation(
+      cf.client.create_invalidation(
         distribution_id: cf_distribution_id,
         invalidation_batch: {
           paths: {

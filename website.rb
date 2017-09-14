@@ -60,6 +60,7 @@ class Website
                              content_type: ct,
                              cache_control: CACHE_CONTROL)
             changed << "/#{obj.key}"
+            changed << "/#{obj.key.chomp 'index.html'}" if obj.key =~ /index\.html$/
           else
             puts "Not changed: #{f}"
           end
@@ -68,6 +69,7 @@ class Website
           puts "Deleting: #{obj.key}"
           obj.delete
           changed << "/#{obj.key}"
+          changed << "/#{obj.key.chomp 'index.html'}" if obj.key =~ /index\.html$/
         end
       end
 

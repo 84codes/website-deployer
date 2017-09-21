@@ -13,7 +13,7 @@ puts "Deploying #{name}"
 auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
 repo_url = "https://#{auth}@github.com/84codes/#{name}-website.git"
 domain = "www.#{name}.com"
-path = "/tmp/#{name}-#{rand}"
+path = "/tmp/#{name}-#{rand(1000..9999)}"
 begin
   FileUtils.mkdir_p path
   Dir.chdir path do

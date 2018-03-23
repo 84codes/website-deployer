@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '2.4.0'
+ruby '2.5.0'
 
 gem 'aws-sdk', '< 2'
 gem 'mime-types'

@@ -23,7 +23,7 @@ class Website
     files.map! { |f| "http://localhost:#{port}/#{f.sub(%r{^/}, '')}" }
     File.write "Files", files.join("\n")
 
-    system "wget --mirror --page-requisites --input-file Files"
+    system "wget --mirror --page-requisites --no-verbose --input-file Files"
     Process.kill 'INT', pid
 
     FileUtils.mv "localhost:#{port}", "output"

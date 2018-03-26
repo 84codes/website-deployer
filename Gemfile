@@ -3,6 +3,7 @@ source 'https://rubygems.org'
 ruby '2.5.0'
 
 gem 'aws-sdk', '< 2'
+gem 'dotenv'
 gem 'mime-types'
 gem 'sinatra'
 gem 'puma'

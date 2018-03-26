@@ -6,6 +6,7 @@ GEM
     aws-sdk-v1 (1.67.0)
       json (~> 1.4)
       nokogiri (~> 1)
+    dotenv (2.2.1)
     ffi (1.9.23)
     haml (5.0.4)
       temple (>= 0.8.0)
@@ -47,6 +48,7 @@ PLATFORMS
 
 DEPENDENCIES
   aws-sdk (< 2)
+  dotenv
   haml
   mail
   mime-types

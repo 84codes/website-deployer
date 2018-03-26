@@ -23,10 +23,12 @@ class Website
     files.map! { |f| "http://localhost:#{port}/#{f.sub(%r{^/}, '')}" }
     File.write "Files", files.join("\n")
 
-    system "wget --mirror --no-verbose --input-file Files"
+    system "wget --mirror --page-requisites --no-verbose --input-file Files"
     Process.kill 'INT', pid
 
-    FileUtils.mv "localhost:#{port}", "output"
+    FileUtils.mkdir "output"
+    FileUtils.mv Dir.glob("public/*"), "output"
+    FileUtils.mv Dir.glob("localhost:#{port}/*"), "output", force: true
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
   rescue Errno::ENOENT => e
     puts e.message

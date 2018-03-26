@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 $stdout.sync = $stderr.sync = true
 require 'bundler/setup'
+require 'dotenv/load'
 require_relative '../website'
 
 name = ARGV.shift
@@ -12,6 +13,7 @@ end
 puts "Deploying #{name}"
 auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
 repo_url = "https://#{auth}@github.com/84codes/#{name}-website.git"
+repo_url = "file://#{ENV['REPO_URL']}/#{name}-website" if ENV['RACK_ENV'] == 'development'
 domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand(1000..9999)}"
 begin
@@ -22,5 +24,5 @@ begin
   end
   puts "#{domain} deployed"
 ensure
-  FileUtils.rm_rf path
+  # FileUtils.rm_rf path
 end

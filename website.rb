@@ -15,7 +15,7 @@ class Website
 
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
-    sleep 3 # wait for app to start
+    sleep 10 # wait for app to start
 
     files = ["index.html", "404.html"]
     files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"

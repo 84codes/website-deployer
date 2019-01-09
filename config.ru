@@ -27,26 +27,28 @@ class MainController < Sinatra::Base
     clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
     domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
 
-    log = capture_output do
-      Dir.mktmpdir do |path|
-        Dir.chdir path do
-          begin
-            system "git clone --depth 1 #{clone_url} ."
-            Website.new(domain).upload
-          rescue => e
-            puts "[ERROR] #{e.inspect}"
-            puts e.backtrace.join("\n  ")
+    Thread.new do
+      log = capture_output do
+        Dir.mktmpdir do |path|
+          Dir.chdir path do
+            begin
+              system "git clone --depth 1 #{clone_url} ."
+              Website.new(domain).upload
+            rescue => e
+              puts "[ERROR] #{e.inspect}"
+              puts e.backtrace.join("\n  ")
+            end
           end
         end
       end
-    end
 
-    emails = payload[:commits].map { |c| c[:author][:email] }.uniq
-    Mail.deliver do
-      from 'system@84codes.com'
-      to emails
-      subject "#{domain} deploy log"
-      body log
+      emails = payload[:commits].map { |c| c[:author][:email] }.uniq
+      Mail.deliver do
+        from 'system@84codes.com'
+        to emails
+        subject "#{domain} deploy log"
+        body log
+      end
     end
     200
   end

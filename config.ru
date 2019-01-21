@@ -11,6 +11,8 @@ require 'uri'
 require 'json'
 
 class MainController < Sinatra::Base
+  enable :logging, :dump_errors
+
   post '/' do
     content_type 'text/plain'
     data = request.body.read
@@ -41,6 +43,7 @@ class MainController < Sinatra::Base
           end
         end
       end
+      print log
 
       emails = payload[:commits].map { |c| c[:author][:email] }.uniq
       Mail.deliver do

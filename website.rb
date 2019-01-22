@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'securerandom'
-require 'aws'
+require 'aws' # https://docs.aws.amazon.com/AWSRubySDK/latest/index.html
 require 'mime/types'
 
 class Website
@@ -15,7 +15,7 @@ class Website
 
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
-    sleep 10 # wait for app to start
+    sleep 5 # wait for app to start
 
     files = ["index.html", "404.html"]
     files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
@@ -37,9 +37,14 @@ class Website
   end
 
   def content_type(f)
-    ct = MIME::Types.of(f).first.to_s
-    ct += ';charset=utf-8' if ct == 'text/html'
-    ct
+    case f.split('.').last
+    when 'js'
+      'application/javascript'
+    else
+      ct = MIME::Types.of(f).first.to_s
+      ct += ';charset=utf-8' if ct == 'text/html'
+      ct
+    end
   end
 
   CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'.freeze

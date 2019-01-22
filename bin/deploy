@@ -21,7 +21,7 @@ begin
   FileUtils.mkdir_p path
   Dir.chdir path do
     system "git clone --depth 1 #{repo_url} ."
-    Website.new(domain).upload
+    Website.new(domain).upload(force_deploy: force)
   end
   puts "#{domain} deployed"
 ensure

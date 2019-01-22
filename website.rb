@@ -89,14 +89,13 @@ class Website
                          content_type: ct,
                          cache_control: CACHE_CONTROL)
       end
-
-      invalidate_cf(changed)
+      invalidate_cf(changed, force_deploy)
     end
   end
 
   private
 
-  def invalidate_cf(changed)
+  def invalidate_cf(changed, force_deploy)
     return if changed.length.zero?
     cf = AWS::CloudFront.new
     dists = cf.client.list_distributions.items
@@ -106,7 +105,7 @@ class Website
         distribution_id: cf_distribution_id,
         invalidation_batch: {
           paths: {
-            items: changed,
+            items: force_deploy ? '/*' : changed,
             quantity: changed.length,
           },
           caller_reference: SecureRandom.uuid,

@@ -6,11 +6,12 @@ require_relative '../website'
 
 name = ARGV.shift
 if name.nil?
-  puts "Usage: deploy {name}"
+  puts "Usage: deploy {name} [--force]"
   puts "Where name is cloudamqp or cloudmqtt etc."
   exit 1
 end
-puts "Deploying #{name}"
+force = ARGV.shift == '--force'
+puts "Deploying #{name} #{force ? 'with full S3 refresh' : ''}"
 auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
 repo_url = "https://#{auth}@github.com/84codes/#{name}-website.git"
 repo_url = "file://#{ENV['REPO_URL']}/#{name}-website" if ENV['RACK_ENV'] == 'development'

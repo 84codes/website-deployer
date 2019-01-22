@@ -47,9 +47,9 @@ class Website
     end
   end
 
-  CACHE_CONTROL = 'public, max-age=300, s-maxage=86400'.freeze
+  CACHE_CONTROL = 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=300, stale-if-error=86400'.freeze
 
-  def upload
+  def upload(force_deploy: false)
     render
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
@@ -60,7 +60,7 @@ class Website
       objects.each do |obj|
         if f = files.find { |fn| fn == obj.key }
           md5 = Digest::MD5.file(f).to_s
-          if obj.etag[1..-2] != md5
+          if obj.etag[1..-2] != md5 || force_deploy
             ct = content_type f
             puts "Updating: #{f} Content-type: #{ct}"
             objects[f].write(file: f,

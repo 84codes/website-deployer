@@ -10,7 +10,8 @@ class Website
 
   def render
     port = rand(1025..9999)
-    FileUtils.rm_rf 'output'
+    output_dir = "output:#{port}"
+    FileUtils.rm_rf output_dir
     FileUtils.rm_rf "localhost:#{port}"
 
     system "bundle --retry 3 --jobs 4"
@@ -26,10 +27,11 @@ class Website
     system "wget --mirror --page-requisites --no-verbose --input-file Files"
     Process.kill 'INT', pid
 
-    FileUtils.mkdir "output"
-    FileUtils.mv Dir.glob("public/*"), "output"
-    FileUtils.mv Dir.glob("localhost:#{port}/*"), "output", force: true
+    FileUtils.mkdir output_dir
+    FileUtils.mv Dir.glob("public/*"), output_dir
+    FileUtils.mv Dir.glob("localhost:#{port}/*"), output_dir, force: true
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
+    output_dir
   rescue Errno::ENOENT => e
     puts e.message
     puts Dir.entries(".")
@@ -50,10 +52,10 @@ class Website
   CACHE_CONTROL = 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=300, stale-if-error=86400'.freeze
 
   def upload(force_deploy: false)
-    render
+    output_dir = render
     s3 = AWS::S3.new
     objects = s3.buckets[@domain].objects
-    Dir.chdir 'output' do
+    Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
 
       changed = []
@@ -115,6 +117,10 @@ class Website
     else
       puts "Couldn't find a CloudFront distribution for #{@domain}"
     end
+  rescue AWS::CloudFront::Errors::ServiceUnavailable => e
+    puts e.inspect
+    sleep 5
+    retry
   rescue AWS::CloudFront::Errors::InvalidArgument => e
     puts e.inspect
   end

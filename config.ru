@@ -22,9 +22,7 @@ class MainController < Sinatra::Base
     sign = request.env["HTTP_X_HUB_SIGNATURE"][5..-1]
     halt 401 unless sign == hmac
     payload = JSON.parse data, symbolize_names: true
-    unless payload[:ref] == "refs/heads/master"
-      halt 200, 'No master branch commit, passing'
-    end
+    halt 200, 'No master branch commit, passing' unless payload[:ref] == "refs/heads/master"
     clone_url = URI.parse payload[:repository][:clone_url]
     clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
     domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
@@ -33,13 +31,11 @@ class MainController < Sinatra::Base
       log = capture_output do
         Dir.mktmpdir do |path|
           Dir.chdir path do
-            begin
-              system "git clone --depth 1 #{clone_url} ."
-              Website.new(domain).upload
-            rescue => e
-              puts "[ERROR] #{e.inspect}"
-              puts e.backtrace.join("\n  ")
-            end
+            system "git clone --depth 1 #{clone_url} ."
+            Website.new(domain).upload
+          rescue => e
+            puts "[ERROR] #{e.inspect}"
+            puts e.backtrace.join("\n  ")
           end
         end
       end
@@ -51,6 +47,7 @@ class MainController < Sinatra::Base
         to emails
         subject "#{domain} deploy log"
         body log
+        charset = "UTF-8"
       end
     end
     200
@@ -66,7 +63,7 @@ class MainController < Sinatra::Base
       yield
       $stdout.rewind
       $stderr.rewind
-      return t.read
+      t.read
     ensure
       $stdout.reopen org_stdout
       $stderr.reopen org_stderr

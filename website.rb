@@ -68,8 +68,8 @@ class Website
             objects[f].write(file: f,
                              content_type: ct,
                              cache_control: CACHE_CONTROL)
-            changed << "/#{obj.key}"
-            changed << "/#{obj.key.chomp 'index.html'}" if obj.key =~ /index\.html$/
+            changed << "/#{encode_rfc1783(obj.key)}"
+            changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}" if obj.key =~ /index\.html$/
           else
             puts "Not changed: #{f}"
           end
@@ -77,8 +77,8 @@ class Website
         else
           puts "Deleting: #{obj.key}"
           obj.delete
-          changed << "/#{obj.key}"
-          changed << "/#{obj.key.chomp 'index.html'}" if obj.key =~ /index\.html$/
+          changed << "/#{encode_rfc1783(obj.key)}"
+          changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}" if obj.key =~ /index\.html$/
         end
       end
 
@@ -94,6 +94,10 @@ class Website
   end
 
   private
+
+  def encode_rfc1783(str)
+    str.split('/').map { |s| CGI.escape(s) }.join('/')
+  end
 
   def invalidate_cf(changed, force_deploy)
     return if changed.length.zero?

@@ -16,7 +16,8 @@ class Website
 
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
-    sleep 5 # wait for app to start
+    Process.detach(pid)
+    sleep 10 # wait for app to start
 
     files = ["index.html", "404.html"]
     files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
@@ -24,7 +25,7 @@ class Website
     files.map! { |f| "http://localhost:#{port}/#{f.sub(%r{^/}, '')}" }
     File.write "Files", files.join("\n")
 
-    system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files"
+    system "wget --mirror --page-requisites -e robots=off --input-file Files"
     Process.kill 'INT', pid
 
     FileUtils.mkdir output_dir

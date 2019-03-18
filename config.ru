@@ -12,6 +12,36 @@ require 'json'
 
 class MainController < Sinatra::Base
   enable :logging, :dump_errors
+  @deploy_queue = Queue.new
+
+  def self.start_deploy_loop
+    Thread.new do
+      loop do
+        config = MainController.deploy_queue.pop
+        log = capture_output do
+          Dir.mktmpdir do |path|
+            Dir.chdir path do
+              system "git clone --depth 1 #{config[:clone_url]} ."
+              Website.new(config[:domain]).upload
+            rescue => e
+              puts "[ERROR] #{e.inspect}"
+              puts e.backtrace.join("\n  ")
+            end
+          end
+        end
+        print log
+
+        emails = config[:payload][:commits].map { |c| c[:author][:email] }.uniq
+        Mail.deliver do
+          from 'system@84codes.com'
+          to emails
+          subject "#{config[:domain]} deploy log"
+          body log
+          charset = "UTF-8" # rubocop:disable Lint/UselessAssignment
+        end
+      end
+    end
+  end
 
   post '/' do
     content_type 'text/plain'
@@ -26,49 +56,8 @@ class MainController < Sinatra::Base
     clone_url = URI.parse payload[:repository][:clone_url]
     clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
     domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
-
-    fork do
-      log = capture_output do
-        Dir.mktmpdir do |path|
-          Dir.chdir path do
-            system "git clone --depth 1 #{clone_url} ."
-            Website.new(domain).upload
-          rescue => e
-            puts "[ERROR] #{e.inspect}"
-            puts e.backtrace.join("\n  ")
-          end
-        end
-      end
-      print log
-
-      emails = payload[:commits].map { |c| c[:author][:email] }.uniq
-      Mail.deliver do
-        from 'system@84codes.com'
-        to emails
-        subject "#{domain} deploy log"
-        body log
-        charset = "UTF-8"
-      end
-    end
+    @deploy_queue.push domain: domain, clone_url: clone_url, payload: payload
     200
-  end
-
-  helpers do
-    def capture_output
-      org_stdout = $stdout.dup
-      org_stderr = $stderr.dup
-      t = Tempfile.new 'out'
-      $stdout.reopen t
-      $stderr.reopen t
-      yield
-      $stdout.rewind
-      $stderr.rewind
-      t.read
-    ensure
-      $stdout.reopen org_stdout
-      $stderr.reopen org_stderr
-      t.unlink
-    end
   end
 
   configure do
@@ -83,6 +72,25 @@ class MainController < Sinatra::Base
       }
     end
   end
+
+  private_class_method :capture_output
+
+  def self.capture_output
+    org_stdout = $stdout.dup
+    org_stderr = $stderr.dup
+    t = Tempfile.new 'out'
+    $stdout.reopen t
+    $stderr.reopen t
+    yield
+    $stdout.rewind
+    $stderr.rewind
+    t.read
+  ensure
+    $stdout.reopen org_stdout
+    $stderr.reopen org_stderr
+    t.unlink
+  end
 end
 
+MainController.start_deploy_loop
 run MainController

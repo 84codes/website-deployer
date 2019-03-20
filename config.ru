@@ -14,6 +14,10 @@ class MainController < Sinatra::Base
   enable :logging, :dump_errors
   @deploy_queue = Queue.new
 
+  class << self
+    attr_accessor :deploy_queue
+  end
+
   def self.start_deploy_loop
     Thread.new do
       loop do

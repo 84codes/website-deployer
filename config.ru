@@ -18,7 +18,7 @@ class MainController < Sinatra::Base
     Thread.new do
       loop do
         config = MainController.deploy_queue.pop
-        log = capture_output do
+        log = MainController.capture_output do
           Dir.mktmpdir do |path|
             Dir.chdir path do
               system "git clone --depth 1 #{config[:clone_url]} ."

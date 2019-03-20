@@ -73,8 +73,6 @@ class MainController < Sinatra::Base
     end
   end
 
-  private_class_method :capture_output
-
   def self.capture_output
     org_stdout = $stdout.dup
     org_stderr = $stderr.dup

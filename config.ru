@@ -60,7 +60,7 @@ class MainController < Sinatra::Base
     clone_url = URI.parse payload[:repository][:clone_url]
     clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
     domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
-    @deploy_queue.push domain: domain, clone_url: clone_url, payload: payload
+    MainController.deploy_queue.push domain: domain, clone_url: clone_url, payload: payload
     200
   end
 

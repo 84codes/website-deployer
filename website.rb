@@ -17,7 +17,7 @@ class Website
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
     Process.detach(pid)
-    sleep 10 # wait for app to start
+    sleep 5 # wait for app to start
 
     files = ["index.html", "404.html"]
     files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
@@ -50,7 +50,8 @@ class Website
     end
   end
 
-  CACHE_CONTROL = 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=300, stale-if-error=86400'.freeze
+  CACHE_CONTROL = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=300,"\
+                  " stale-if-error=86400".freeze
 
   def upload(force_deploy: false)
     output_dir = render
@@ -58,7 +59,7 @@ class Website
     objects = s3.buckets[@domain].objects
     Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
-
+      raise "Render failed!" unless files.any? { |f| f =~ /index\.html$/ }
       changed = []
       objects.each do |obj|
         if f = files.find { |fn| fn == obj.key }

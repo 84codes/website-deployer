@@ -22,6 +22,7 @@ class MainController < Sinatra::Base
     Thread.new do
       loop do
         config = MainController.deploy_queue.pop
+        puts "Starting deploy with #{MainController.deploy_queue.size} waiting: #{config}"
         log = MainController.capture_output do
           Dir.mktmpdir do |path|
             Dir.chdir path do
@@ -60,6 +61,8 @@ class MainController < Sinatra::Base
     clone_url = URI.parse payload[:repository][:clone_url]
     clone_url.userinfo = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
     domain = payload[:repository][:homepage].sub(%r{https?://([^/]+).*}, '\1')
+    config = { domain: domain, clone_url: clone_url, payload: payload }
+    puts "Enqueing deploy with #{MainController.deploy_queue.size} waiting: #{config}"
     MainController.deploy_queue.push domain: domain, clone_url: clone_url, payload: payload
     200
   end

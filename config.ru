@@ -44,6 +44,7 @@ class MainController < Sinatra::Base
           body log
           charset = "UTF-8" # rubocop:disable Lint/UselessAssignment
         end
+        GC.start
       end
     end
   end

@@ -37,12 +37,16 @@ class MainController < Sinatra::Base
         print log
 
         emails = config[:payload][:commits].map { |c| c[:author][:email] }.uniq
-        Mail.deliver do
-          from 'system@84codes.com'
-          to emails
-          subject "#{config[:domain]} deploy log"
-          body log
-          charset = "UTF-8" # rubocop:disable Lint/UselessAssignment
+        begin
+          Mail.deliver do
+            from 'system@84codes.com'
+            to emails
+            subject "#{config[:domain]} deploy log"
+            body log
+            charset = "UTF-8" # rubocop:disable Lint/UselessAssignment
+          end
+        rescue
+          print "Cloud not deliver email to: #{emails}"
         end
         GC.start
       end

@@ -13,4 +13,5 @@ gem 'sass'
 # Normal requirements for websites
 gem 'haml'
 gem 'nokogiri'
+gem 'builder'
 gem 'redcarpet'

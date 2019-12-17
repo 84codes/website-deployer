@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby '2.6.3'
 
-gem 'aws-sdk', '< 2'
+gem 'aws-sdk', '< 4'
 gem 'dotenv'
 gem 'mime-types'
 gem 'sinatra'

@@ -6,7 +6,7 @@ GEM
     aws-sdk-v1 (1.67.0)
       json (~> 1.4)
       nokogiri (~> 1)
-    builder (3.2.3)
+    builder (3.2.4)
     dotenv (2.7.5)
     ffi (1.11.1)
     haml (5.1.2)

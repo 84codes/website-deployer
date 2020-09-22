@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '2.6.6'
+ruby File.read('.ruby-version')
 
 gem 'aws-sdk', '< 2'
 gem 'dotenv'

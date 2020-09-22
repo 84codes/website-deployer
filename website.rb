@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'securerandom'
+require 'socket'
 require 'aws' # https://docs.aws.amazon.com/AWSRubySDK/latest/index.html
 require 'mime/types'
 
@@ -8,9 +9,18 @@ class Website
     @domain = domain
   end
 
+  def random_free_port(host)
+    server = TCPServer.new(host, 0)
+    port   = server.addr[1]
+
+    port
+  ensure
+    server&.close
+  end
+
   def render
     host = ENV.fetch("LOCALHOST", "localhost")
-    port = rand(1025..9999)
+    port = random_free_port(host)
     output_dir = "output:#{port}"
     FileUtils.rm_rf output_dir
     FileUtils.rm_rf "#{host}:#{port}"

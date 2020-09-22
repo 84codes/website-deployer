@@ -9,10 +9,11 @@ class Website
   end
 
   def render
+    host = ENV.fetch("LOCALHOST", "localhost")
     port = rand(1025..9999)
     output_dir = "output:#{port}"
     FileUtils.rm_rf output_dir
-    FileUtils.rm_rf "localhost:#{port}"
+    FileUtils.rm_rf "#{host}:#{port}"
 
     system "bundle --retry 3 --jobs 4"
     pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
@@ -22,7 +23,7 @@ class Website
     files = ["index.html", "404.html"]
     files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
 
-    files.map! { |f| "http://localhost:#{port}/#{f.sub(%r{^/}, '')}" }
+    files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}" }
     File.write "Files", files.join("\n")
 
     system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files"
@@ -30,7 +31,7 @@ class Website
 
     FileUtils.mkdir output_dir
     FileUtils.mv Dir.glob("public/*"), output_dir
-    FileUtils.mv Dir.glob("localhost:#{port}/*"), output_dir, force: true
+    FileUtils.mv Dir.glob("#{host}:#{port}/*"), output_dir, force: true
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
     output_dir
   rescue Errno::ENOENT => e

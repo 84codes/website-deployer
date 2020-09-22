@@ -12,9 +12,12 @@ if name.nil?
 end
 force = ARGV.shift == '--force'
 puts "Deploying #{name} #{force ? 'with full S3 refresh' : ''}"
-auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
-repo_url = "https://#{auth}@github.com/84codes/#{name}-website.git"
-repo_url = "file://#{ENV['REPO_URL']}/#{name}-website" if ENV['RACK_ENV'] == 'development'
+repo_url = if ENV['RACK_ENV'] == 'development'
+             "file://#{ENV['REPO_URL']}/#{name}-website"
+           else
+             auth = "#{ENV.fetch 'OAUTH_TOKEN'}:x-oauth-basic"
+             "https://#{auth}@github.com/84codes/#{name}-website.git"
+           end
 domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand(1000..9999)}"
 begin

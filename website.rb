@@ -80,9 +80,10 @@ class Website
             ct = content_type f
             puts "Updating: #{f} Content-type: #{ct}"
             File.open(f) do |io|
-              objects[f].put(body: io,
-                             content_type: ct,
-                             cache_control: CACHE_CONTROL)
+              bucket.put_object(key: f,
+                                body: io,
+                                content_type: ct,
+                                cache_control: CACHE_CONTROL)
             end
             changed << "/#{encode_rfc1783(obj.key)}"
             if obj.key.end_with? "index.html"
@@ -106,9 +107,10 @@ class Website
         ct = content_type f
         puts "Uploading: #{f} Content-type: #{ct}"
         File.open(f) do |io|
-          objects[f].put(body: io,
-                         content_type: ct,
-                         cache_control: CACHE_CONTROL)
+          bucket.put_object(key: f,
+                            body: io,
+                            content_type: ct,
+                            cache_control: CACHE_CONTROL)
         end
       end
       invalidate_cf(changed, force_deploy)

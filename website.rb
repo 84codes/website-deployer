@@ -134,8 +134,8 @@ class Website
         distribution_id: cf_distribution_id,
         invalidation_batch: {
           paths: {
-            items: force_deploy ? '/*' : changed,
-            quantity: changed.length,
+            items: force_deploy ? ['/*'] : changed,
+            quantity: force_deploy ? 1 : changed.length,
           },
           caller_reference: SecureRandom.uuid,
         }

@@ -22,7 +22,6 @@ domain = "www.#{name}.com"
 path = "/tmp/#{name}-#{rand(1000..9999)}"
 begin
   FileUtils.mkdir_p path
-  FileUtils.cp ".ruby-version", path
   Dir.chdir path do
     system "git clone --depth 1 #{repo_url} ."
     Website.new(domain).upload(force_deploy: force)

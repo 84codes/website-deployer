@@ -127,7 +127,7 @@ class Website
   def invalidate_cf(changed, force_deploy)
     return if changed.length.zero?
     cf = Aws::CloudFront::Resource.new
-    dists = cf.client.list_distributions.items
+    dists = cf.client.list_distributions.distribution_list.items
     dist = dists.find { |d| d[:aliases][:items].include? @domain }
     if dist && cf_distribution_id = dist[:id]
       cf.client.create_invalidation(
@@ -150,11 +150,11 @@ class Website
   def wait_for_invalidation(cf_distribution_id, invalidation_id)
     loop do
       sleep 2
-      invalid = cf.client.get_invalidation(
+      resp = cf.client.get_invalidation(
         distribution_id: cf_distribution_id,
         id: invalidation_id
       )
-      break unless invalid[:status] == 'InProgress'
+      break unless resp.invalidation[:status] == 'InProgress'
       print '.'
     end
     puts 'Done!'

@@ -2,6 +2,7 @@ require 'fileutils'
 require 'securerandom'
 require 'socket'
 require 'aws-sdk-s3' # https://docs.aws.amazon.com/sdk-for-ruby/v3/api/index.html
+require 'aws-sdk-cloudfront'
 require 'mime/types'
 
 class Website

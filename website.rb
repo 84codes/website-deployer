@@ -125,7 +125,7 @@ class Website
 
   def invalidate_cf(changed, force_deploy)
     return if changed.length.zero?
-    cf = AWS::CloudFront.new
+    cf = Aws::CloudFront::Resource.new
     dists = cf.client.list_distributions.items
     dist = dists.find { |d| d[:aliases][:items].include? @domain }
     if dist && cf_distribution_id = dist[:id]
@@ -144,12 +144,6 @@ class Website
     else
       puts "Couldn't find a CloudFront distribution for #{@domain}"
     end
-  rescue AWS::CloudFront::Errors::ServiceUnavailable => e
-    puts e.inspect
-    sleep 5
-    retry
-  rescue AWS::CloudFront::Errors::InvalidArgument => e
-    puts e.inspect
   end
 
   def wait_for_invalidation(cf_distribution_id, invalidation_id)

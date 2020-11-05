@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'aws-sdk', '< 2'
+gem 'aws-sdk-s3', '~> 1'
 gem 'dotenv'
 gem 'mime-types'
 gem 'sinatra'

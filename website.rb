@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'securerandom'
 require 'socket'
-require 'aws' # https://docs.aws.amazon.com/AWSRubySDK/latest/index.html
+require 'aws-sdk' # https://docs.aws.amazon.com/sdk-for-ruby/v3/api/index.html
 require 'mime/types'
 
 class Website
@@ -66,8 +66,9 @@ class Website
 
   def upload(force_deploy: false)
     output_dir = render
-    s3 = AWS::S3.new
-    objects = s3.buckets[@domain].objects
+    s3 = Aws::S3::Resource.new
+    bucket = s3.bucket(@domain)
+    objects = bucket.objects
     Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
       raise "Render failed!" unless files.any? { |f| f =~ /index\.html$/ }
@@ -78,11 +79,15 @@ class Website
           if obj.etag[1..-2] != md5 || force_deploy
             ct = content_type f
             puts "Updating: #{f} Content-type: #{ct}"
-            objects[f].write(file: f,
+            File.open(f) do |io|
+              objects[f].put(body: io,
                              content_type: ct,
                              cache_control: CACHE_CONTROL)
+            end
             changed << "/#{encode_rfc1783(obj.key)}"
-            changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}" if obj.key =~ /index\.html$/
+            if obj.key.end_with? "index.html"
+              changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}"
+            end
           else
             puts "Not changed: #{f}"
           end
@@ -91,16 +96,20 @@ class Website
           puts "Deleting: #{obj.key}"
           obj.delete
           changed << "/#{encode_rfc1783(obj.key)}"
-          changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}" if obj.key =~ /index\.html$/
+          if obj.key.end_with? "index.html"
+            changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}"
+          end
         end
       end
 
       files.each do |f|
         ct = content_type f
         puts "Uploading: #{f} Content-type: #{ct}"
-        objects[f].write(file: f,
+        File.open(f) do |io|
+          objects[f].put(body: io,
                          content_type: ct,
                          cache_control: CACHE_CONTROL)
+        end
       end
       invalidate_cf(changed, force_deploy)
     end
@@ -117,7 +126,7 @@ class Website
     cf = AWS::CloudFront.new
     dists = cf.client.list_distributions.items
     dist = dists.find { |d| d[:aliases][:items].include? @domain }
-    if dist and cf_distribution_id = dist[:id]
+    if dist && cf_distribution_id = dist[:id]
       cf.client.create_invalidation(
         distribution_id: cf_distribution_id,
         invalidation_batch: {

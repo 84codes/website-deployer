@@ -128,7 +128,7 @@ class Website
       end
 
       redirects.each do |source, target|
-        puts "Redirecting #{obj.key} -> #{target}"
+        puts "Redirecting #{source} -> #{target}"
         bucket.put_object(key: source,
                           metadata: { "x-amz-website-redirect-location" => target })
       end

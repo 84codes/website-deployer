@@ -101,10 +101,11 @@ class Website
           end
           files.delete f
         elsif target = redirects.delete(obj.key)
-          if obj.metadata["x-amz-website-redirect-location"] != target || force_deploy
+          if obj.website_redirect_location != target || force_deploy
             puts "Updating: redirect #{obj.key} -> #{target}"
-            metadata = obj.metadata.merge("x-amz-website-redirect-location" => target)
-            obj.put(metadata)
+            obj.put(website_redirect_location: target,
+                    content_type: 'text/html;charset=utf-8',
+                    cache_control: CACHE_CONTROL)
           end
         else
           puts "Deleting: #{obj.key}"
@@ -130,7 +131,9 @@ class Website
       redirects.each do |source, target|
         puts "Redirecting #{source} -> #{target}"
         bucket.put_object(key: source,
-                          metadata: { "x-amz-website-redirect-location" => target })
+                          website_redirect_location: target,
+                          content_type: 'text/html;charset=utf-8',
+                          cache_control: CACHE_CONTROL)
       end
       invalidate_cf(changed, force_deploy)
     end

@@ -81,6 +81,7 @@ class Website
       raise "Render failed!" unless files.any? { |f| f =~ /index\.html$/ }
       changed = []
       objects.each do |obj|
+        encoded_key = "/#{encode_rfc1783(obj.key)}"
         if f = files.find { |fn| fn == obj.key }
           md5 = Digest::MD5.file(f).to_s
           if obj.etag[1..-2] != md5 || force_deploy
@@ -92,10 +93,8 @@ class Website
                                 content_type: ct,
                                 cache_control: CACHE_CONTROL)
             end
-            changed << "/#{encode_rfc1783(obj.key)}"
-            if obj.key.end_with? "index.html"
-              changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}"
-            end
+            changed << encoded_key
+            changed << encoded_key.chomp("index.html") if obj.key.end_with? "index.html"
           else
             puts "Not changed: #{f}"
           end
@@ -106,14 +105,13 @@ class Website
             obj.put(website_redirect_location: target,
                     content_type: 'text/html;charset=utf-8',
                     cache_control: CACHE_CONTROL)
+            changed << encoded_key
           end
         else
           puts "Deleting: #{obj.key}"
           obj.delete
-          changed << "/#{encode_rfc1783(obj.key)}"
-          if obj.key.end_with? "index.html"
-            changed << "/#{encode_rfc1783(obj.key).chomp 'index.html'}"
-          end
+          changed << encoded_key
+          changed << encoded_key.chomp("index.html") if obj.key.end_with? "index.html"
         end
       end
 

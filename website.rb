@@ -6,6 +6,8 @@ require 'aws-sdk-cloudfront'
 require 'mime/types'
 
 class Website
+  REDIRECTS_FILE = "redirect.json".freeze
+
   def initialize(domain)
     @domain = domain
   end
@@ -43,6 +45,9 @@ class Website
     FileUtils.mkdir output_dir
     FileUtils.mv Dir.glob("public/*"), output_dir
     FileUtils.mv Dir.glob("#{host}:#{port}/*"), output_dir, force: true
+
+    FileUtils.mv(REDIRECTS_FILE, output_dir) if File.exist?(REDIRECTS_FILE)
+
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
     output_dir
   rescue Errno::ENOENT => e
@@ -70,6 +75,8 @@ class Website
     s3 = Aws::S3::Resource.new
     bucket = s3.bucket(@domain)
     objects = bucket.objects
+    redirects = File.exist?(REDIRECTS_FILE) ? JSON.parse(REDIRECTS_FILE) : {}
+
     Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
       raise "Render failed!" unless files.any? { |f| f =~ /index\.html$/ }
@@ -94,6 +101,11 @@ class Website
             puts "Not changed: #{f}"
           end
           files.delete f
+        elsif target = redirects.delete(obj.key)
+          if obj.metadata["x-amz-website-redirect-location"] != target || force_deploy
+            metadata = obj.metadata.merge("x-amz-website-redirect-location" => target)
+            obj.put(metadata)
+          end
         else
           puts "Deleting: #{obj.key}"
           obj.delete
@@ -113,6 +125,11 @@ class Website
                             content_type: ct,
                             cache_control: CACHE_CONTROL)
         end
+      end
+
+      redirects.each do |source, target|
+        bucket.put_object(key: source,
+                          metadata: { "x-amz-website-redirect-location" => target })
       end
       invalidate_cf(changed, force_deploy)
     end

@@ -101,7 +101,7 @@ class Website
           end
           files.delete f
         elsif target = redirects.delete(obj.key)
-          if obj.website_redirect_location != target || force_deploy
+          if obj.object.website_redirect_location != target || force_deploy
             puts "Updating: redirect #{obj.key} -> #{target}"
             obj.put(website_redirect_location: target,
                     content_type: 'text/html;charset=utf-8',

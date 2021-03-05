@@ -6,7 +6,7 @@ require 'aws-sdk-cloudfront'
 require 'mime/types'
 
 class Website
-  REDIRECTS_FILE = "redirect.json".freeze
+  REDIRECTS_FILE = "redirects.json".freeze
 
   def initialize(domain)
     @domain = domain

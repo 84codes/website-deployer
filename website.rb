@@ -76,6 +76,7 @@ class Website
     bucket = s3.bucket(@domain)
     objects = bucket.objects
     redirects = File.exist?(REDIRECTS_FILE) ? JSON.parse(REDIRECTS_FILE) : {}
+    puts "Found #{redirects.size} redirects"
 
     Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
@@ -103,6 +104,7 @@ class Website
           files.delete f
         elsif target = redirects.delete(obj.key)
           if obj.metadata["x-amz-website-redirect-location"] != target || force_deploy
+            puts "Updating: redirect #{obj.key} -> #{target}"
             metadata = obj.metadata.merge("x-amz-website-redirect-location" => target)
             obj.put(metadata)
           end
@@ -128,6 +130,7 @@ class Website
       end
 
       redirects.each do |source, target|
+        puts "Redirecting #{obj.key} -> #{target}"
         bucket.put_object(key: source,
                           metadata: { "x-amz-website-redirect-location" => target })
       end

@@ -73,7 +73,7 @@ class Website
     s3 = Aws::S3::Resource.new
     bucket = s3.bucket(@domain)
     objects = bucket.objects
-    redirects = File.exist?(REDIRECTS_FILE) ? JSON.parse(REDIRECTS_FILE) : {}
+    redirects = File.exist?(REDIRECTS_FILE) ? JSON.parse(File.read(REDIRECTS_FILE)) : {}
     puts "Found #{redirects.size} redirects"
 
     Dir.chdir output_dir do

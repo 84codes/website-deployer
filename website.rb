@@ -46,8 +46,6 @@ class Website
     FileUtils.mv Dir.glob("public/*"), output_dir
     FileUtils.mv Dir.glob("#{host}:#{port}/*"), output_dir, force: true
 
-    FileUtils.mv(REDIRECTS_FILE, output_dir) if File.exist?(REDIRECTS_FILE)
-
     Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
     output_dir
   rescue Errno::ENOENT => e

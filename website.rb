@@ -78,7 +78,10 @@ class Website
 
     Dir.chdir output_dir do
       files = Dir['**/*'].select { |f| File.file? f }
-      raise "Render failed!" unless files.any? { |f| f =~ /index\.html$/ }
+      unless files.any? { |f| f =~ /index\.html$/ }
+        puts "[DEBUG] no index found, files=#{files}"
+        raise "Render failed!"
+      end
       changed = []
       objects.each do |obj|
         encoded_key = "/#{encode_rfc1783(obj.key)}"

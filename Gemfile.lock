@@ -63,6 +63,7 @@ GEM
       tilt (~> 2.0)
     temple (0.8.2)
     tilt (2.0.10)
+    webrick (1.7.0)
 
 PLATFORMS
   ruby
@@ -80,6 +81,7 @@ DEPENDENCIES
   redcarpet
   sass
   sinatra
+  webrick
 
 RUBY VERSION
    ruby 3.0.2p107

@@ -23,7 +23,6 @@ module Website
       FileUtils.rm_rf output_dir
       FileUtils.rm_rf "#{host}:#{port}"
 
-      system "bundle --retry 3 --jobs 4"
       pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
       Process.detach(pid)
       sleep 5 # wait for app to start

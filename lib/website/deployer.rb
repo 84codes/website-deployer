@@ -133,12 +133,12 @@ module Website
     end
 
     def invalidate_cf(domain, changed, force_deploy)
-      return if changed.length.zero?
+      return if changed.empty? && !force_deploy
       cf = Aws::CloudFront::Resource.new
       dists = cf.client.list_distributions.distribution_list.items
       dist = dists.find { |d| d[:aliases][:items].include? domain }
       if dist && cf_distribution_id = dist[:id]
-        cf.client.create_invalidation(
+        resp = cf.client.create_invalidation(
           distribution_id: cf_distribution_id,
           invalidation_batch: {
             paths: {

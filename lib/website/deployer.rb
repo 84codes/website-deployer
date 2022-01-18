@@ -15,28 +15,23 @@ module Website
     def render
       host = ENV.fetch("LOCALHOST", "localhost")
       port = random_free_port(host)
-      output_dir = "output:#{port}"
+      output_dir = "#{host}:#{port}"
       FileUtils.rm_rf output_dir
-      FileUtils.rm_rf "#{host}:#{port}"
+      FileUtils.cp_r "public/.", output_dir
 
       pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
       Process.detach(pid)
-      sleep 5 # wait for app to start
+      sleep 1 # wait for app to start
 
       files = ["index.html", "404.html"]
       files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
-
-      files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}" }
+      files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}".chomp }
       File.write "Files", files.join("\n")
 
       system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files --no-http-keep-alive"
       Process.kill 'INT', pid
 
-      FileUtils.mkdir output_dir
-      FileUtils.cp_r Dir.glob("public/*"), output_dir
-      FileUtils.mv Dir.glob("#{host}:#{port}/*"), output_dir, force: true
-
-      Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
+      Dir["#{output_dir}/**/*"].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
       output_dir
     rescue Errno::ENOENT => e
       puts e.message
@@ -126,6 +121,7 @@ module Website
                             content_type: 'text/html;charset=utf-8',
                             cache_control: CACHE_CONTROL)
         end
+
         invalidate_cf(domain, changed, force_deploy)
       end
     end

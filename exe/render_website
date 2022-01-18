@@ -5,9 +5,9 @@ require_relative '../lib/website/deployer'
 domain = ARGV.shift
 if domain.nil?
   puts "Usage: #{File.basename(__FILE__)} {domain}"
-  puts "Where name is www.cloudamqp.com or www.cloudmqtt.com etc."
+  puts "Where domain is www.cloudamqp.com or www.cloudmqtt.com etc."
   exit 1
-force = ARGV.shift == '--force'
-puts "Rendering #{name}"
+end
+puts "Rendering #{domain}"
 Website::Deployer.new(domain).render
 puts "#{domain} rendered"

@@ -18,6 +18,6 @@ Install the built gem
 
 Try it in a website repo
 
-    bundle add website-deployer
+    bundle update website-deployer
 
     bundle exec render_website www.cloudamqp.com

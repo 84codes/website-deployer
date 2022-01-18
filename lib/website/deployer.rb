@@ -19,7 +19,7 @@ module Website
       FileUtils.rm_rf output_dir
       FileUtils.cp_r "public/.", output_dir
 
-      pid = spawn "RACK_ENV=production ruby app.rb -p #{port}"
+      pid = spawn "RACK_ENV=production ruby app.rb -p #{port} -q"
       Process.detach(pid)
       sleep 1 # wait for app to start
 

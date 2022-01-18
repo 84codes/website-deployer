@@ -20,7 +20,7 @@ module Website
       FileUtils.cp_r "public/.", output_dir
       FileUtils.rm_rf "#{output_dir}/scss"
 
-      pid = spawn "RACK_ENV=production ruby app.rb -p #{port} -q"
+      pid = spawn "ruby app.rb -p #{port} -q -e production"
       Process.detach(pid)
       sleep 1 # wait for app to start
 

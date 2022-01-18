@@ -85,7 +85,7 @@ module Website
               changed << encoded_key
               changed << encoded_key.chomp("index.html") if obj.key.end_with? "index.html"
             else
-              puts "Not changed: #{f}"
+              # puts "Not changed: #{f}"
             end
             files.delete f
           elsif target = redirects.delete(obj.key)

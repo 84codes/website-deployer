@@ -150,23 +150,18 @@ module Website
           }
         )
         puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        wait_for_invalidation(cf_distribution_id, resp[:id])
+        cf.client.wait_for(:invalidation_completed, {
+          distribution_id: cf_distribution_id,
+          id: resp.invalidation.id
+        }, {
+          before_wait: -> (attempts, response) do
+            puts "Waiting for CF invalidation (#{attempts})"
+          end
+        })
+        puts 'Done!'
       else
         puts "Couldn't find a CloudFront distribution for #{domain}"
       end
-    end
-
-    def wait_for_invalidation(cf_distribution_id, invalidation_id)
-      loop do
-        sleep 2
-        resp = cf.client.get_invalidation(
-          distribution_id: cf_distribution_id,
-          id: invalidation_id
-        )
-        break unless resp.invalidation[:status] == 'InProgress'
-        print '.'
-      end
-      puts 'Done!'
     end
 
     private

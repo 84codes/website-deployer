@@ -2,14 +2,13 @@
 
 require_relative '../lib/website/deployer'
 
-name = ARGV.shift
-if name.nil?
-  puts "Usage: deploy {name} [--force]"
-  puts "Where name is cloudamqp or cloudmqtt etc."
+domain = ARGV.shift
+if domain.nil?
+  puts "Usage: deploy {domain} [--force]"
+  puts "Where name is www.cloudamqp.com or www.cloudmqtt.com etc."
   exit 1
 end
 force = ARGV.shift == '--force'
 puts "Deploying #{name} #{force ? 'with full S3 refresh' : ''}"
-domain = "www.#{name}.com"
 Website::Deployer.new(domain).upload(force_deploy: force)
 puts "#{domain} deployed"

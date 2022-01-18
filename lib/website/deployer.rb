@@ -29,7 +29,7 @@ module Website
       files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}" }
       File.write "Files", files.join("\n")
 
-      system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files"
+      system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files --no-http-keep-alive"
       Process.kill 'INT', pid
 
       FileUtils.mkdir output_dir

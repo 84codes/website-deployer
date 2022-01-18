@@ -33,7 +33,7 @@ module Website
       Process.kill 'INT', pid
 
       FileUtils.mkdir output_dir
-      FileUtils.mv Dir.glob("public/*"), output_dir
+      FileUtils.cp_r Dir.glob("public/*"), output_dir
       FileUtils.mv Dir.glob("#{host}:#{port}/*"), output_dir, force: true
 
       Dir['**/*'].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }

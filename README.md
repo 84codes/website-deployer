@@ -19,6 +19,12 @@ Deploy locally:
 
 # Github Action Workflow
 
+Add it to the `Gemfile`:
+
+```ruby
+gem 'website-deployer', github: "84codes/website-deployer"
+```
+
 Add the following workflow to the website's actions:
 
 ```yaml
@@ -32,7 +38,7 @@ on:
 
 jobs:
   website:
-    uses: 84codes/website-deployer/.github/workflows/deploy.yml@gem
+    uses: 84codes/website-deployer/.github/workflows/deploy.yml
     with:
       domain: www.cloudamqp.com
     secrets:

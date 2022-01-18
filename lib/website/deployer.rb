@@ -150,7 +150,7 @@ module Website
           }
         )
         puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        cf.client.wait_for(:invalidation_completed, {
+        cf.client.wait_until(:invalidation_completed, {
           distribution_id: cf_distribution_id,
           id: resp.invalidation.id
         }, {

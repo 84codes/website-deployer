@@ -11,6 +11,9 @@ on:
         required: true
       AWS_SECRET_ACCESS_KEY:
         required: true
+      ORG_GITHUB_TOKEN_FOR_CI:
+        required: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,6 +22,8 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+        env:
+          BUNDLE_GITHUB__COM: x-access-token:${{ secrets.ORG_GITHUB_TOKEN_FOR_CI }}
       - run: bundle exec deploy-website ${{ inputs.domain }}
         env:
           AWS_REGION: us-east-1

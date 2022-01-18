@@ -18,6 +18,7 @@ module Website
       output_dir = "#{host}:#{port}"
       FileUtils.rm_rf output_dir
       FileUtils.cp_r "public/.", output_dir
+      FileUtils.rm_rf "#{output_dir}/scss"
 
       pid = spawn "RACK_ENV=production ruby app.rb -p #{port} -q"
       Process.detach(pid)

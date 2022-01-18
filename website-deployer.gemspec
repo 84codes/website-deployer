@@ -32,15 +32,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'aws-sdk-cloudfront', '~> 1'
   spec.add_dependency 'aws-sdk-s3', '~> 1'
-  spec.add_dependency 'builder'
-  spec.add_dependency 'dotenv'
-  spec.add_dependency 'haml'
-  spec.add_dependency 'mail'
   spec.add_dependency 'mime-types'
-  spec.add_dependency 'nokogiri'
-  spec.add_dependency 'puma'
-  spec.add_dependency 'redcarpet'
-  spec.add_dependency 'sass'
-  spec.add_dependency 'sinatra'
-  spec.add_dependency 'webrick'
 end

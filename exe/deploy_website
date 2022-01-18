@@ -10,5 +10,5 @@ if domain.nil?
 end
 force = ARGV.shift == '--force'
 puts "Deploying #{domain} #{force ? 'with full S3 refresh' : ''}"
-Website::Deployer.new(domain).upload(force_deploy: force)
+Website::Deployer.new.upload(domain, force_deploy: force)
 puts "#{domain} deployed"

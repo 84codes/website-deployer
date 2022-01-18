@@ -12,10 +12,6 @@ module Website
   class Deployer
     REDIRECTS_FILE = "redirects.json"
 
-    def initialize(domain)
-      @domain = domain
-    end
-
     def render
       host = ENV.fetch("LOCALHOST", "localhost")
       port = random_free_port(host)
@@ -62,10 +58,10 @@ module Website
     CACHE_CONTROL = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=300,"\
       " stale-if-error=86400".freeze
 
-    def upload(force_deploy: false)
+    def upload(domain, force_deploy: false)
       output_dir = render
       s3 = Aws::S3::Resource.new
-      bucket = s3.bucket(@domain)
+      bucket = s3.bucket(domain)
       objects = bucket.objects
       redirects = File.exist?(REDIRECTS_FILE) ? JSON.parse(File.read(REDIRECTS_FILE)) : {}
       puts "Found #{redirects.size} redirects"
@@ -130,7 +126,7 @@ module Website
                             content_type: 'text/html;charset=utf-8',
                             cache_control: CACHE_CONTROL)
         end
-        invalidate_cf(changed, force_deploy)
+        invalidate_cf(domain, changed, force_deploy)
       end
     end
 
@@ -140,11 +136,11 @@ module Website
       str.split('/').map { |s| CGI.escape(s) }.join('/')
     end
 
-    def invalidate_cf(changed, force_deploy)
+    def invalidate_cf(domain, changed, force_deploy)
       return if changed.length.zero?
       cf = Aws::CloudFront::Resource.new
       dists = cf.client.list_distributions.distribution_list.items
-      dist = dists.find { |d| d[:aliases][:items].include? @domain }
+      dist = dists.find { |d| d[:aliases][:items].include? domain }
       if dist && cf_distribution_id = dist[:id]
         cf.client.create_invalidation(
           distribution_id: cf_distribution_id,
@@ -159,7 +155,7 @@ module Website
         puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
         wait_for_invalidation(cf_distribution_id, resp[:id])
       else
-        puts "Couldn't find a CloudFront distribution for #{@domain}"
+        puts "Couldn't find a CloudFront distribution for #{domain}"
       end
     end
 

@@ -2,11 +2,5 @@
 
 require_relative '../lib/website/deployer'
 
-domain = ARGV.shift
-if domain.nil?
-  puts "Usage: render {domain}"
-  puts "Where domain is www.cloudamqp.com or www.cloudmqtt.com etc."
-  exit 1
-end
-outdir = Website::Deployer.new(domain).render
+outdir = Website::Deployer.new.render
 puts "Rendered to #{outdir}"

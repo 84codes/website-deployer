@@ -1,11 +1,57 @@
 # website-deployer
 
-1. Receives commit POSTs from GitHub from [website repos]
-1. Clones the repo in question
-1. Starts the website ruby app
-1. Generates a static site using wget against the website ruby app
-1. Publishes the static website to S3/CF
+Gem that can render a static website and upload it to S3 and then invalidate CloudFront.
 
-Note: The Ruby version of this project and of website projects needs to match.
+Used by our [website repos].
 
 [website repos]: https://github.com/84codes?q=website&type=&language=
+
+## Usage
+
+Render locally:
+
+    bundle exec render-website
+
+Deploy locally:
+
+    bundle exec deploy-website
+
+
+# Github Action Workflow
+
+Add the following workflow to the website's actions:
+
+```yaml
+name: Website deployer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  website:
+    uses: 84codes/website-deployer/.github/workflows/deploy.yml@gem
+    with:
+      domain: www.cloudamqp.com
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+## Development
+
+Build the gem
+
+    gem build
+
+Install the built gem
+
+    gem install --local ./website-deployer-*
+
+Try it in a website repo
+
+    bundle update website-deployer
+
+    bundle exec render-website

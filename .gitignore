@@ -1,2 +1,4 @@
 .env
 .bundle
+*.gem
+Gemfile.lock

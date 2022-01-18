@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/website/deployer'
+
+outdir = Website::Deployer.new.render
+puts "Rendered to #{outdir}"

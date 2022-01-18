@@ -1,19 +1,8 @@
-source 'https://rubygems.org'
+# frozen_string_literal: true
 
-ruby File.read('.ruby-version')
+source "https://rubygems.org"
 
-gem 'aws-sdk-cloudfront', '~> 1'
-gem 'aws-sdk-s3', '~> 1'
-gem 'dotenv'
-gem 'mail'
-gem 'mime-types'
-gem 'puma'
-gem 'sass'
-gem 'sinatra'
-gem 'webrick'
+# Specify your gem's dependencies in website-deployer.gemspec
+gemspec
 
-# Normal requirements for websites
-gem 'builder'
-gem 'haml'
-gem 'nokogiri'
-gem 'redcarpet'
+gem "rake", "~> 13.0"

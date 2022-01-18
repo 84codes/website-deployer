@@ -157,7 +157,7 @@ module Website
           }
         )
         puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        # wait_for_invalidation(cf_distribution_id, resp[:id])
+        wait_for_invalidation(cf_distribution_id, resp[:id])
       else
         puts "Couldn't find a CloudFront distribution for #{@domain}"
       end

@@ -32,5 +32,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'aws-sdk-cloudfront', '~> 1'
   spec.add_dependency 'aws-sdk-s3', '~> 1'
-  spec.add_dependency 'mime-types'
+  spec.add_dependency 'mime-types', '~> 3'
 end

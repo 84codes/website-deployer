@@ -12,7 +12,7 @@ on:
       AWS_SECRET_ACCESS_KEY:
         required: true
       ORG_GITHUB_TOKEN_FOR_CI:
-        required: true
+        required: false
 
 jobs:
   deploy:

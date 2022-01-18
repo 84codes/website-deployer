@@ -16,15 +16,6 @@ module Website
       @domain = domain
     end
 
-    def random_free_port(host)
-      server = TCPServer.new(host, 0)
-      port   = server.addr[1]
-
-      port
-    ensure
-      server&.close
-    end
-
     def render
       host = ENV.fetch("LOCALHOST", "localhost")
       port = random_free_port(host)
@@ -185,8 +176,16 @@ module Website
       end
       puts 'Done!'
     end
+
+    private
+
+    def random_free_port(host)
+      server = TCPServer.new(host, 0)
+      begin
+        server.addr[1]
+      ensure
+        server.close
+      end
+    end
   end
-
-  class Error < StandardError; end
 end
-

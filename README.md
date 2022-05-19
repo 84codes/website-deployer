@@ -25,6 +25,7 @@ Add it to the `Gemfile`:
 gem 'website-deployer', github: "84codes/website-deployer"
 ```
 
+Set up secrets (see naming in YAML below) per website repository.
 Add the following workflow to the website's actions:
 
 ```yaml

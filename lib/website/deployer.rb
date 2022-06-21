@@ -2,6 +2,7 @@
 
 require_relative "deployer/version"
 require 'fileutils'
+require 'open3'
 require 'securerandom'
 require 'socket'
 require 'aws-sdk-s3' # https://docs.aws.amazon.com/sdk-for-ruby/v3/api/index.html
@@ -11,6 +12,9 @@ require 'mime/types'
 module Website
   class Deployer
     REDIRECTS_FILE = "redirects.json"
+    CRAWL_ERRORS = [
+      "ERROR 500: Internal Server Error"
+    ]
 
     def render
       host = ENV.fetch("LOCALHOST", "localhost")
@@ -20,17 +24,29 @@ module Website
       FileUtils.cp_r "public/.", output_dir
       FileUtils.rm_rf "#{output_dir}/scss"
 
-      pid = spawn "ruby app.rb -p #{port} -q -e production"
-      Process.detach(pid)
+      app_command = "ruby app.rb -p #{port} -q -e production"
+      app_pid = spawn(app_command)
+      Process.detach(app_pid)
       sleep 1 # wait for app to start
+      puts "\nStarted app server with PID=#{app_pid} and command:\n\n\t#{app_command}"
 
       files = ["index.html", "404.html"]
       files.concat(File.readlines("Extrafiles")) if File.exist? "Extrafiles"
       files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}".chomp }
       File.write "Files", files.join("\n")
 
-      system "wget --mirror --page-requisites --no-verbose -e robots=off --input-file Files --no-http-keep-alive"
-      Process.kill 'INT', pid
+      crawl_command = "wget --mirror --page-requisites --no-verbose "\
+                      "--execute robots=off --input-file Files --no-http-keep-alive"
+      puts "\nStarting crawl with command:\n\n\t#{crawl_command}\n\n"
+      crawl_log = []
+      Open3.popen2e(crawl_command) do |_stdin, stdout_and_stderr, _wait_thr|
+        stdout_and_stderr.each do |line|
+          crawl_log << line
+          if CRAWL_ERRORS.any? { |str| line.include?(str) }
+            raise "Aborting crawl, error detected:\n\n#{crawl_log.join}\n\n"
+          end
+        end
+      end
 
       Dir["#{output_dir}/**/*"].select { |f| f.include? "?" }.each { |f| FileUtils.rm f }
       output_dir
@@ -38,6 +54,8 @@ module Website
       puts e.message
       puts Dir.entries(".")
       raise
+    ensure
+      Process.kill 'INT', app_pid
     end
 
     def content_type(f)

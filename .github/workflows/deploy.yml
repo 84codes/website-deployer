@@ -18,13 +18,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: "Set force deploy argument"
+        run: echo "EXTRA_DEPLOY_ARGS=--force" >> "$GITHUB_ENV"
+        if: ${{ contains(github.event.head_commit.message, '[force deploy]') }}
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
         env:
           BUNDLE_GITHUB__COM: x-access-token:${{ secrets.ORG_GITHUB_TOKEN_FOR_CI }}
-      - run: bundle exec deploy-website ${{ inputs.domain }}
+      - run: bundle exec deploy-website ${{ inputs.domain }} ${{ env.EXTRA_DEPLOY_ARGS }}
         env:
           AWS_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

@@ -69,8 +69,8 @@ module Website
       end
     end
 
-    CACHE_CONTROL = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=300,"\
-      " stale-if-error=86400".freeze
+    CACHE_CONTROL = "public, max-age=60, s-maxage=60, stale-while-revalidate=60,"\
+      " stale-if-error=60".freeze
 
     def upload(domain, force_deploy: false)
       output_dir = render

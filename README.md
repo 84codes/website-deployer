@@ -47,6 +47,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 ```
 
+Tagging a commit with `[force deploy]` will append `--force` to the deploy script, i.e. updating all objects and invalidating all cache.
+
 ## Development
 
 Build the gem

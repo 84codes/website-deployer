@@ -83,7 +83,7 @@ module Website
       Dir.chdir output_dir do
         files = Dir['**/*'].select { |f| File.file? f }
         unless files.any? { |f| f =~ /index\.html$/ }
-          puts "[DEBUG] no index found, files=#{files}"
+          puts "at=debug no index found, files=#{files}"
           raise "Render failed!"
         end
         changed = []

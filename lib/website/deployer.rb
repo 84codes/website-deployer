@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 require_relative "deployer/version"
-require 'fileutils'
-require 'open3'
-require 'securerandom'
-require 'socket'
-require 'aws-sdk-s3' # https://docs.aws.amazon.com/sdk-for-ruby/v3/api/index.html
-require 'aws-sdk-cloudfront'
-require 'mime/types'
+require "fileutils"
+require "open3"
+require "securerandom"
+require "socket"
+require "aws-sdk-s3" # https://docs.aws.amazon.com/sdk-for-ruby/v3/api/index.html
+require "aws-sdk-cloudfront"
+require "mime/types"
 
 module Website
   class Deployer
@@ -55,22 +55,22 @@ module Website
       puts Dir.entries(".")
       raise
     ensure
-      Process.kill 'INT', app_pid
+      Process.kill "INT", app_pid
     end
 
     def content_type(f)
-      case f.split('.').last
-      when 'js'
-        'application/javascript'
+      case f.split(".").last
+      when "js"
+        "application/javascript"
       else
         ct = MIME::Types.of(f).first.to_s
-        ct += ';charset=utf-8' if ct == 'text/html'
+        ct += ";charset=utf-8" if ct == "text/html"
         ct
       end
     end
 
     CACHE_CONTROL = "public, max-age=60, s-maxage=60, stale-while-revalidate=60,"\
-      " stale-if-error=60".freeze
+      " stale-if-error=60"
 
     def upload(domain, force_deploy: false)
       output_dir = render
@@ -81,7 +81,7 @@ module Website
       puts "Found #{redirects.size} redirects"
 
       Dir.chdir output_dir do
-        files = Dir['**/*'].select { |f| File.file? f }
+        files = Dir["**/*"].select { |f| File.file? f }
         unless files.any? { |f| f =~ /index\.html$/ }
           puts "at=debug no index found, files=#{files}"
           raise "Render failed!"
@@ -110,7 +110,7 @@ module Website
             if obj.object.website_redirect_location != target || force_deploy
               puts "Updating: redirect #{obj.key} -> #{target}"
               obj.put(website_redirect_location: target,
-                      content_type: 'text/html;charset=utf-8',
+                      content_type: "text/html;charset=utf-8",
                       cache_control: CACHE_CONTROL)
               changed << encoded_key
             end
@@ -137,7 +137,7 @@ module Website
           puts "Redirecting #{source} -> #{target}"
           bucket.put_object(key: source,
                             website_redirect_location: target,
-                            content_type: 'text/html;charset=utf-8',
+                            content_type: "text/html;charset=utf-8",
                             cache_control: CACHE_CONTROL)
         end
 
@@ -148,7 +148,7 @@ module Website
     private
 
     def encode_rfc1783(str)
-      str.split('/').map { |s| CGI.escape(s) }.join('/')
+      str.split("/").map { |s| CGI.escape(s) }.join("/")
     end
 
     def invalidate_cf(domain, changed, force_deploy)
@@ -161,7 +161,7 @@ module Website
           distribution_id: cf_distribution_id,
           invalidation_batch: {
             paths: {
-              items: force_deploy ? ['/*'] : changed,
+              items: force_deploy ? ["/*"] : changed,
               quantity: force_deploy ? 1 : changed.length,
             },
             caller_reference: SecureRandom.uuid,
@@ -172,17 +172,15 @@ module Website
           distribution_id: cf_distribution_id,
           id: resp.invalidation.id
         }, {
-          before_wait: -> (attempts, response) do
+          before_wait: lambda do |attempts, _response|
             puts "Waiting for CF invalidation (#{attempts})"
           end
         })
-        puts 'Done!'
+        puts "Done!"
       else
         puts "Couldn't find a CloudFront distribution for #{domain}"
       end
     end
-
-    private
 
     def random_free_port(host)
       server = TCPServer.new(host, 0)

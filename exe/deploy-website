@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/website/deployer'
+require_relative "../lib/website/deployer"
 
 domain = ARGV.shift
 if domain.nil?
@@ -8,7 +8,7 @@ if domain.nil?
   puts "Where domain is www.cloudamqp.com or www.cloudmqtt.com etc."
   exit 1
 end
-force = ARGV.shift == '--force'
+force = ARGV.shift == "--force"
 puts "Deploying #{domain} #{force ? 'with full S3 refresh' : ''}"
 Website::Deployer.new.upload(domain, force_deploy: force)
 puts "#{domain} deployed"

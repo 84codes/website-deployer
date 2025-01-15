@@ -35,7 +35,7 @@ module Website
       files.map! { |f| "http://#{host}:#{port}/#{f.sub(%r{^/}, '')}".chomp }
       File.write "Files", files.join("\n")
 
-      crawl_command = "wget --mirror --page-requisites --no-verbose "\
+      crawl_command = "wget --mirror --page-requisites --no-verbose --retry-connrefused "\
                       "--execute robots=off --input-file Files --no-http-keep-alive"
       puts "\nStarting crawl with command:\n\n\t#{crawl_command}\n\n"
       crawl_log = []

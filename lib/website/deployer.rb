@@ -72,8 +72,8 @@ module Website
     CACHE_CONTROL = "public, max-age=60, s-maxage=60, stale-while-revalidate=60,"\
       " stale-if-error=60"
 
-    def upload(domain, force_deploy: false)
-      output_dir = render
+    def upload(domain, force_deploy: false, output_dir: nil)
+      output_dir ||= render
       s3 = Aws::S3::Resource.new
       bucket = s3.bucket(domain)
       objects = bucket.objects

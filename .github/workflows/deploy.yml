@@ -6,13 +6,16 @@ on:
       domain:
         required: true
         type: string
+      role-to-assume:
+        required: true
+        type: string
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
       ORG_GITHUB_TOKEN_FOR_CI:
         required: false
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
@@ -21,14 +24,21 @@ jobs:
       - name: "Set force deploy argument"
         run: echo "EXTRA_DEPLOY_ARGS=--force" >> "$GITHUB_ENV"
         if: ${{ contains(github.event.head_commit.message, '[force deploy]') }}
-      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ inputs.role-to-assume }}
+          aws-region: us-east-1
+
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
         env:
           BUNDLE_GITHUB__COM: x-access-token:${{ secrets.ORG_GITHUB_TOKEN_FOR_CI }}
+
       - run: bundle exec deploy-website ${{ inputs.domain }} ${{ env.EXTRA_DEPLOY_ARGS }}
         env:
           AWS_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

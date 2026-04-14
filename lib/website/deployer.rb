@@ -153,33 +153,45 @@ module Website
 
     def invalidate_cf(domain, changed, force_deploy)
       return if changed.empty? && !force_deploy
+
+      cf_distribution_id = resolve_distribution_id(domain)
+      unless cf_distribution_id
+        puts "Couldn't find a CloudFront distribution for #{domain}"
+        return
+      end
+
+      cf = Aws::CloudFront::Client.new
+      resp = cf.create_invalidation(
+        distribution_id: cf_distribution_id,
+        invalidation_batch: {
+          paths: {
+            items: force_deploy ? ["/*"] : changed,
+            quantity: force_deploy ? 1 : changed.length,
+          },
+          caller_reference: SecureRandom.uuid,
+        }
+      )
+      puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
+      cf.wait_until(:invalidation_completed, {
+        distribution_id: cf_distribution_id,
+        id: resp.invalidation.id
+      }, {
+        before_wait: lambda do |attempts, _response|
+          puts "Waiting for CF invalidation (#{attempts})"
+        end
+      })
+      puts "Done!"
+    end
+
+    def resolve_distribution_id(domain)
+      if (id = ENV["CLOUDFRONT_DISTRIBUTION_ID"])
+        return id
+      end
+
       cf = Aws::CloudFront::Resource.new
       dists = cf.client.list_distributions.distribution_list.items
       dist = dists.find { |d| d[:aliases][:items].include? domain }
-      if dist && cf_distribution_id = dist[:id]
-        resp = cf.client.create_invalidation(
-          distribution_id: cf_distribution_id,
-          invalidation_batch: {
-            paths: {
-              items: force_deploy ? ["/*"] : changed,
-              quantity: force_deploy ? 1 : changed.length,
-            },
-            caller_reference: SecureRandom.uuid,
-          }
-        )
-        puts "Invalidating #{changed.length} changed items on CloudFront #{cf_distribution_id}"
-        cf.client.wait_until(:invalidation_completed, {
-          distribution_id: cf_distribution_id,
-          id: resp.invalidation.id
-        }, {
-          before_wait: lambda do |attempts, _response|
-            puts "Waiting for CF invalidation (#{attempts})"
-          end
-        })
-        puts "Done!"
-      else
-        puts "Couldn't find a CloudFront distribution for #{domain}"
-      end
+      dist&.dig(:id)
     end
 
     def random_free_port(host)

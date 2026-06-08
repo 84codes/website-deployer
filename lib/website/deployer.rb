@@ -72,8 +72,14 @@ module Website
     CACHE_CONTROL = "public, max-age=60, s-maxage=60, stale-while-revalidate=60,"\
       " stale-if-error=60"
 
-    def upload(domain, force_deploy: false)
-      output_dir = render
+    def upload(domain, force_deploy: false, output_dir: nil)
+      if output_dir
+        unless Dir.exist?(output_dir)
+          raise ArgumentError, "output_dir #{output_dir.inspect} does not exist"
+        end
+      else
+        output_dir = render
+      end
       s3 = Aws::S3::Resource.new
       bucket = s3.bucket(domain)
       objects = bucket.objects
@@ -84,7 +90,7 @@ module Website
         files = Dir["**/*"].select { |f| File.file? f }
         unless files.any? { |f| f =~ /index\.html$/ }
           puts "at=debug no index found, files=#{files}"
-          raise "Render failed!"
+          raise "No index.html found in #{output_dir}"
         end
         changed = []
         objects.each do |obj|
